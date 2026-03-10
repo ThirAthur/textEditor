@@ -1,5 +1,5 @@
 # **Panduan Instalasi dan setting enviroenment** :blue_book:
->Catatan: Panduan ini dikhususkan untuk pengguna Visual Studio Code dan komputer dengan sistem operasi Windows
+>:memo: Catatan: Panduan ini dikhususkan untuk pengguna Visual Studio Code dan komputer dengan sistem operasi Windows
 
 ## Set Environment USER
 ### 1. Instal MSYS2 dan GTK
@@ -146,3 +146,23 @@ pada file `task.json` ketikan
 5. Buka folder disimpannya proyek
 6. cari file dengan nama yang sama seperti file yang dibuild dengan extention(.exe)
 7. Klik file tersebut untuk menjalankan program
+
+## Identitas
+### Anggota
+```
+Fathir Aththur Fahrezi
+Git: ThirAthur
+NIM: 251511037
+```
+```
+Deva Annurrahman
+NIM: 251511036
+Git: Yamss001
+```
+```
+M. Fachri Akbar Irfan
+NIM: 251511045
+Git: Fachri76
+```
+### Manajer
+##### Djoko Cahyo Utomo Lieharyani, S.Kom., M.MT
