@@ -1,7 +1,7 @@
-# **Panduan Instalasi dan setting enviorenment** :blue_book:
+# **Panduan Instalasi dan setting enviroenment** :blue_book:
 >Catatan: Panduan ini dikhususkan untuk pengguna Visual Studio Code dan komputer dengan sistem operasi Windows
 
-## Persiapan
+## Set Environment USER
 ### 1. Instal MSYS2 dan GTK
 Download dan Instal dari: https://www.msys2.org/
 
@@ -14,17 +14,17 @@ karena menggunakan bahasa pemrograman C maka perlu instal compiler maka ketikan 
 pacman -S mingw-w64-x86_64-toolchain base-devel
 ```
 
-### 2. Set Enviorment
-#### A. Gunakan window lalu cari "Edit the system enviorment variabel"
+### 2. Set Environment
+#### A. Gunakan window lalu cari "Edit the system environment variabel"
 ```bash
-Edit the system enviorment variabel
+Edit the system environment variabel
 ```
-#### B. Cari dan klik "Enviormetn Variabel"
+#### B. Cari dan klik "Environment Variabel"
 #### C. Pada kolom "User variabel for USER" cari dan klik "Path" lalu klik tombol "New" dan tuliskan "C:\MSYS2\mingw64\bin"
 ```bash
 C:\MSYS2\mingw64\bin
 ```
-## Set Enviorment pada Visual Studio Code
+## Set Environment pada Visual Studio Code
 ### 1. Buka Visual Studio Code dan buka menu extention lalu cari extention "C/C++"'
 ### 2. Instal extention "C/C++"
 ### 3. Buatlah folder dan file yang terdapat penggunaan GTK
@@ -131,5 +131,18 @@ pada file `task.json` ketikan
 }
 ```
 
+**Setting environment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
 
-**Setting enviorment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
+### Compile and Run 
+1. Buka file yang ingin dicompile
+2. Compile dengan menekan tombol :arrow_forward: yang ada pad pojok kiri atas
+3. pilih compiler yang digunakan untuk menjalankan program
+
+### Compile, Build, and Run
+1. Buka file yang ingin dicompile
+2. cari tombol `Terminal` pada menu bagian atas
+3. pilih opsi `Run task...`
+4. Pilih Compiler
+5. Buka folder disimpannya proyek
+6. cari file dengan nama yang sama seperti file yang dibuild dengan extention(.exe)
+7. Klik file tersebut untuk menjalankan program
