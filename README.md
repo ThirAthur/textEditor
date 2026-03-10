@@ -130,5 +130,5 @@ pada file `task.json` ketikan
  ]
 }
 ```
-
+p
 # **Setting enviorment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
