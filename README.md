@@ -1,4 +1,4 @@
-# **Panduan Instalasi dan setting enviorenment** :Blue_Book:
+# **Panduan Instalasi dan setting enviorenment** :blue_book:
 >Catatan: Panduan ini dikhususkan untuk pengguna Visual Studio Code dan komputer dengan sistem operasi Windows
 
 ## Persiapan
@@ -130,5 +130,6 @@ pada file `task.json` ketikan
  ]
 }
 ```
-p
-# **Setting enviorment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
+
+
+**Setting enviorment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
