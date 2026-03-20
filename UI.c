@@ -1,27 +1,67 @@
 #include <gtk/gtk.h>
 #include "Array.h"
-#include "array.c" //tidak bisa hanya Array.h masalah pada enviorment
+#include <string.h>
+
+static GtkWidget *text;
+
+static void gui_update()
+{
+    int pos, len;
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+    char display[ROW * (COL + 1)];
+    pos = 0;
+
+    for(int i = 0; i < ROW; i++){
+        len = strlen(text_buffer[i]);
+
+        if(pos + len + 2 >= sizeof(display))
+            break;
+
+        memcpy(&display[pos], text_buffer[i], len);
+        pos += len;
+
+        if(i < ROW - 1 && text_buffer[i + 1][0] != '\0'){
+            display[pos++] = '\n';
+        }
+    }
+
+    display[pos] = '\0';
+    gtk_text_buffer_set_text(buffer, display, -1);
+
+}
 
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
-char text_buffer[ROW][COL] = {0};
-int row_pos = 0;
-int col_pos = 0;
-
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             guint keycode,
                             GdkModifierType state,
                             gpointer data)
 {
-    if(keyval >= 32 && keyval <= 126){
+    if(keyval == GDK_KEY_BackSpace){
+        delete_char(text_buffer, &row_pos, &col_pos);
+    }
+
+    else if(keyval == GDK_KEY_Tab){
+        indention(text_buffer, &row_pos, &col_pos);
+    }
+
+    else if(keyval == GDK_KEY_Return){
+        new_line(text_buffer, &row_pos, &col_pos);
+    } 
+
+    else if(keyval >= 32 && keyval <= 126){
         insert_char(text_buffer, &row_pos, &col_pos, (char)keyval);
     }
 
-    if(keyval == GDK_KEY_Return){
-        insert_char(text_buffer, &row_pos, &col_pos, '\n');
+    else{
+        return FALSE;
     }
 
-    return FALSE;
+    array_checker((char)keyval);
+    gui_update();
+
+    return TRUE;
 }
 
 // Menu setting
@@ -73,7 +113,6 @@ GtkWidget *createMenuBar()
 static void activate(GtkApplication *app, gpointer user_data)
 {
     GtkWidget *window;
-    GtkWidget *text;
     GtkWidget *box;
     GtkWidget *menu;
 
@@ -81,7 +120,7 @@ static void activate(GtkApplication *app, gpointer user_data)
     gtk_window_set_title(GTK_WINDOW(window), "TeDit");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
-    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_window_set_child(GTK_WINDOW(window), box);
 
     menu = createMenuBar();
@@ -89,12 +128,15 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     text = gtk_text_view_new();
     gtk_box_append(GTK_BOX(box), text);
+    gtk_widget_set_hexpand(text, TRUE);
+    gtk_widget_set_vexpand(text, TRUE);
 
     GtkEventController *controller = gtk_event_controller_key_new();
     g_signal_connect(controller, "key-pressed", G_CALLBACK(key_pressed), NULL);
 
     gtk_widget_add_controller(text, controller);
 
+    gui_update();
     gtk_window_present(GTK_WINDOW(window));
 }
 
