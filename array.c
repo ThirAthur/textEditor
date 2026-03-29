@@ -24,7 +24,7 @@ void new_line(char text[ROW][COL], int *r, int *c)
         return;
 
     if(*c < COL){
-        text[*r][*c] = '\0';
+        text[*r][*c] = '\n';
     }
 
     if(*r < ROW - 1){
@@ -35,17 +35,18 @@ void new_line(char text[ROW][COL], int *r, int *c)
 
 void delete_char(char text[ROW][COL], int *r, int *c)
 {
+    int tab = 0;
     if(*c > 0){
-         if(*c >= 4 &&
-           text[*r][*c - 1] == ' ' &&
-           text[*r][*c - 2] == ' ' &&
-           text[*r][*c - 3] == ' ' &&
-           text[*r][*c - 4] == ' ')
+        for (int i = 1; i <= 4; i++){
+            if (text[*r][*c - i] == ' '){
+                tab++;
+            }
+        }
+        if(tab == 4)
         {
-            text[*r][*c - 1] = '\0';
-            text[*r][*c - 2] = '\0';
-            text[*r][*c - 3] = '\0';
-            text[*r][*c - 4] = '\0';
+            for(int i = 1; i <= 4; i++){
+                text[*r][*c - i] = '\0';
+            }
             *c -= 4;
         }
         else{
@@ -65,7 +66,27 @@ void indention(char text[ROW][COL], int *r, int *c)
     }
 }
 
-void array_checker(char ch)
+void array_checker(char text[ROW][COL], int *r, int *c)
 {
-    printf("%c", ch);
+    // Loop only up to the current row to prevent "infinite" scrolling
+    for (int i = 0; i <= *r && i < ROW; i++) 
+    {
+        for (int j = 0; j < COL; j++) 
+        {
+            char ch = text[i][j];
+
+            if (ch == '\0') {
+                printf("[\\0]");
+                break;
+            } 
+            else if (ch == '\n') {
+                printf("[\\n]");
+            } 
+            else {
+                printf("[%c]", ch);
+            }
+        }
+        printf("\n");
+    }
+    printf("------------------------------\n");
 }

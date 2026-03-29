@@ -11,7 +11,7 @@ extern int col_pos;
 void insert_char(char text[ROW][COL], int *r, int *c, char ch);
 void delete_char(char text[ROW][COL], int *r, int *c);
 void indention(char text[ROW][COL], int *r, int *c);
-void array_checker(char ch);
+void array_checker(char text[ROW][COL], int *r, int *c);
 void new_line(char text[ROW][COL], int *r, int *c);
 
 #endif

@@ -31,12 +31,8 @@ static void gui_update()
 
 }
 
-//penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
-static gboolean key_pressed(GtkEventControllerKey *controller,
-                            guint keyval,
-                            guint keycode,
-                            GdkModifierType state,
-                            gpointer data)
+static gboolean key_pressed(GtkApplication *controller, guint keyval,
+                            GdkModifierType state, gpointer data)
 {
     if(keyval == GDK_KEY_BackSpace){
         delete_char(text_buffer, &row_pos, &col_pos);
@@ -58,7 +54,7 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         return FALSE;
     }
 
-    array_checker((char)keyval);
+    array_checker(text_buffer, &row_pos, &col_pos);
     gui_update();
 
     return TRUE;
@@ -110,7 +106,7 @@ GtkWidget *createMenuBar()
 }
 
 // Aktivasi dan memunculkan window
-static void activate(GtkApplication *app, gpointer user_data)
+void activate(GtkApplication *app, gpointer user_data)
 {
     GtkWidget *window;
     GtkWidget *box;
@@ -138,21 +134,4 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));
-}
-
-int main(int argc, char **argv)
-{
-    GtkApplication *app;
-    int status;
-
-    app = gtk_application_new("org.tedit.example",
-                              G_APPLICATION_DEFAULT_FLAGS);
-
-    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-
-    status = g_application_run(G_APPLICATION(app), argc, argv);
-
-    g_object_unref(app);
-
-    return status;
 }
