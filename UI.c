@@ -1,6 +1,10 @@
 #include <gtk/gtk.h>
 #include "Array.h"
 #include <string.h>
+#include "file.h"
+
+char current_file[256] = "";
+int file_opened = 0;
 
 static GtkWidget *text;
 
@@ -31,8 +35,25 @@ static void gui_update()
 
 }
 
-static gboolean key_pressed(GtkApplication *controller, guint keyval,
-                            GdkModifierType state, gpointer data)
+static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    create_file(text_buffer);
+
+    row_pos = 0;
+    col_pos = 0;
+
+    current_file[0] = '\0';
+    file_opened = 0;
+
+    gui_update();
+}
+
+//penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
+static gboolean key_pressed(GtkEventControllerKey *controller,
+                            guint keyval,
+                            guint keycode,
+                            GdkModifierType state,
+                            gpointer data)
 {
     if(keyval == GDK_KEY_BackSpace){
         delete_char(text_buffer, &row_pos, &col_pos);
@@ -134,4 +155,10 @@ void activate(GtkApplication *app, gpointer user_data)
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));
+
+    GSimpleAction *new_action = g_simple_action_new("new", NULL);
+    g_signal_connect(new_action, "activate", G_CALLBACK(action_new), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));
+
+    
 }
