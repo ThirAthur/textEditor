@@ -24,10 +24,6 @@ static void gui_update()
 
         memcpy(&display[pos], text_buffer[i], len);
         pos += len;
-
-        if(i < ROW - 1 && text_buffer[i + 1][0] != '\0'){
-            display[pos++] = '\n';
-        }
     }
 
     display[pos] = '\0';
@@ -51,8 +47,6 @@ static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
-                            guint keycode,
-                            GdkModifierType state,
                             gpointer data)
 {
     if(keyval == GDK_KEY_BackSpace){
@@ -133,6 +127,7 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *box;
     GtkWidget *menu;
 
+
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "TeDit");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
@@ -144,6 +139,9 @@ void activate(GtkApplication *app, gpointer user_data)
     gtk_box_append(GTK_BOX(box), menu);
 
     text = gtk_text_view_new();
+
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD_CHAR);
+
     gtk_box_append(GTK_BOX(box), text);
     gtk_widget_set_hexpand(text, TRUE);
     gtk_widget_set_vexpand(text, TRUE);

@@ -11,6 +11,10 @@ void insert_char(char text[ROW][COL], int *r, int *c, char ch)
     if(*r >= ROW)
         return;
 
+    if (*c >= COL - 1) {
+        new_line(text, r, c);
+    }
+
     if(*c < COL - 1){
         text[*r][*c] = ch;
         (*c)++;
@@ -23,8 +27,9 @@ void new_line(char text[ROW][COL], int *r, int *c)
     if(*r >= ROW)
         return;
 
-    if(*c < COL){
-        text[*r][*c] = '\0';
+    if(*c < COL - 1){
+        text[*r][*c] = '\n';
+        text[*r][*c + 1] = '\0';
     }
 
     if(*r < ROW - 1){
@@ -56,6 +61,10 @@ void delete_char(char text[ROW][COL], int *r, int *c)
     } else if(*r > 0){
         (*r)--;
         *c = strlen(text[*r]);
+        if (*c > 0 && text[*r][*c - 1] == '\n') {
+            (*c)--;
+            text[*r][*c] = '\0';
+        }
     }
 }
 
@@ -81,6 +90,7 @@ void array_checker(char text[ROW][COL], int *r, int *c)
             } 
             else if (ch == '\n') {
                 printf("[\\n]");
+
             } 
             else {
                 printf("[%c]", ch);
