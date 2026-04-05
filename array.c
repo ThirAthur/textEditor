@@ -24,7 +24,7 @@ void new_line(char text[ROW][COL], int *r, int *c)
         return;
 
     if(*c < COL){
-        text[*r][*c] = '\n';
+        text[*r][*c] = '\0';
     }
 
     if(*r < ROW - 1){
