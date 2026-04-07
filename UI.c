@@ -34,14 +34,43 @@ static void gui_update()
 static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
     create_file(text_buffer);
-
+    
     row_pos = 0;
     col_pos = 0;
-
+    
     current_file[0] = '\0';
     file_opened = 0;
 
     gui_update();
+}
+
+static void open_response(GObject *source, GAsyncResult *res, gpointer data)
+{
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
+    GFile *file = gtk_file_dialog_open_finish(dialog, res, NULL);
+
+    if (file != NULL) {
+        char *path = g_file_get_path(file);
+
+        open_file(path, text_buffer);
+
+        strcpy(current_file, path);
+        file_opened = 1;
+
+        gui_update();
+
+        gtk_widget_grab_focus(text);
+
+        g_free(path);
+        g_object_unref(file);
+    }
+}
+
+static void action_open(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+
+    gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
 
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
@@ -158,5 +187,7 @@ void activate(GtkApplication *app, gpointer user_data)
     g_signal_connect(new_action, "activate", G_CALLBACK(action_new), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));
 
-    
+    GSimpleAction *open_action = g_simple_action_new("open", NULL);
+    g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(open_action));
 }
