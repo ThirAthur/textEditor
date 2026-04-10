@@ -2,7 +2,6 @@
 #include "edit.h"
 
 char internal_clipboard[CLIPBOARD_SIZE] = "";
-
 static void insert_string_to_buffer(char text[ROW][COL], int *row, int *col, const char *str)
 {
     int i = 0;
@@ -48,5 +47,16 @@ void paste_clipboard_text(char text[ROW][COL], int *row, int *col)
         return;
     }
 
-    insert_string_to_buffer(text, row, col, internal_clipboard);
+    int i = 0;
+    while (internal_clipboard[i] != '\0') {
+
+        if (internal_clipboard[i] == '\n') {
+            new_line(text, row, col);
+        } 
+
+        else {
+            insert_char(text, row, col, internal_clipboard[i]);
+        }
+        i++;
+    }
 }
