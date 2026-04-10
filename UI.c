@@ -77,6 +77,31 @@ static void action_open(GSimpleAction *action, GVariant *parameter, gpointer dat
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
 
+static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
+{
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
+    GFile *file = gtk_file_dialog_save_finish(dialog, res, NULL);
+
+    if (file != NULL) {
+        char *path = g_file_get_path(file);
+
+        save_file(path, text_buffer);
+
+        strcpy(current_file, path);
+        file_opened = 1;
+
+        g_free(path);
+        g_object_unref(file);
+    }
+}
+
+static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+
+    gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
+}
+
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
@@ -163,7 +188,7 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *menu;
 
     window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "TeDit");
+    gtk_window_set_title(GTK_WINDOW(window), "SendalJepit");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -192,4 +217,8 @@ void activate(GtkApplication *app, gpointer user_data)
     GSimpleAction *open_action = g_simple_action_new("open", NULL);
     g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(open_action));
+
+    GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
+    g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
 }
