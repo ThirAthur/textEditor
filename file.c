@@ -51,7 +51,6 @@ void save_as_file(const char *filename, char text_buffer[][COL])
 
         fprintf(fp, "%s", text_buffer[i]);
 
-        // tambah newline jika masih ada baris berikutnya
         if (i < ROW - 1 && text_buffer[i + 1][0] != '\0') {
             fprintf(fp, "\n");
         }
