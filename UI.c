@@ -51,6 +51,15 @@ static void gui_update()
     gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(text), mark, 0.0, FALSE, 0.0, 0.0);
 }
 
+static void warning(GtkWindow *parent)
+{
+    GtkAlertDialog *dialog = gtk_alert_dialog_new("Tidak ada FIle aktif");
+
+    gtk_alert_dialog_set_detail(dialog, "Gunakan Fitur New untuk mulai menulis");
+
+    gtk_alert_dialog_show(dialog, parent); 
+}
+
 static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
     create_file(text_buffer);
@@ -59,9 +68,10 @@ static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data
     col_pos = 0;
     
     current_file[0] = '\0';
-    file_opened = 0;
+    file_opened = 1;
 
     gui_update();
+    gtk_widget_grab_focus(text);
 }
 
 static void open_response(GObject *source, GAsyncResult *res, gpointer data)
@@ -118,11 +128,37 @@ static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer 
     gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
 }
 
+static void action_close(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    create_file(text_buffer);
+
+    row_pos = 0;
+    col_pos = 0;
+
+    current_file[0] = '\0';
+    file_opened = 0;
+
+    gui_update();
+
+    gtk_widget_grab_focus(text);
+}
+
+
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
 {
+    int alert = 0;
+    printf("file_opened = %d\n", file_opened);
+    if (!file_opened) {
+        if(!alert){
+            warning(NULL);
+            alert = 1;
+        }
+        return TRUE;
+    }
+
     if(keyval == GDK_KEY_BackSpace){
         delete_char(text_buffer, &row_pos, &col_pos);
     }
@@ -191,6 +227,7 @@ GMenu *createFileMenu()
     g_menu_append(file_menu, "Open", "app.open");
     g_menu_append(file_menu, "Save", "app.save");
     g_menu_append(file_menu, "Save As", "app.save_as");
+    g_menu_append(file_menu, "Close File", "app.close");
     g_menu_append(file_menu, "Exit", "app.exit");
 
     return file_menu;
@@ -275,4 +312,8 @@ void activate(GtkApplication *app, gpointer user_data)
     GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
     g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
+
+    GSimpleAction *close_action = g_simple_action_new("close", NULL);
+    g_signal_connect(close_action, "activate", G_CALLBACK(action_close), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(close_action));
 }
