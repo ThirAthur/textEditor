@@ -24,11 +24,8 @@ void open_file(const char *filename, char text_buffer[][COL])
     int i = 0;
 
     while (fgets(line, sizeof(line), fp) != NULL && i < ROW) {
-
         line[strcspn(line, "\n")] = '\0';
-
         strcpy(text_buffer[i], line);
-
         i++;
     }
 
@@ -44,20 +41,33 @@ void save_file(const char *filename, char text_buffer[][COL])
         return;
     }
 
+    int last_row = -1;
+
+    /* cari baris terakhir yang masih terpakai */
     for (int i = 0; i < ROW; i++) {
+        if (text_buffer[i][0] != '\0') {
+            last_row = i;
+        }
+    }
 
-        if (text_buffer[i][0] == '\0')
-            break;
+    /* kalau semua kosong, buat file kosong */
+    if (last_row == -1) {
+        fclose(fp);
+        return;
+    }
 
+    /* simpan semua baris sampai baris terakhir, termasuk baris kosong di tengah */
+    for (int i = 0; i <= last_row; i++) {
         fprintf(fp, "%s", text_buffer[i]);
 
-        if (i < ROW - 1 && text_buffer[i + 1][0] != '\0') {
+        if (i < last_row) {
             fprintf(fp, "\n");
         }
     }
 
     fclose(fp);
 }
+
 void save_as_file(const char *filename, char text_buffer[][COL])
 {
     save_file(filename, text_buffer);
