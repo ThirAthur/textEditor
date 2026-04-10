@@ -98,7 +98,7 @@ pada file `task.json` ketikan
     "-msse",
     "-msse2",
 
-    "${file}",
+    "${workspaceFolder}/*.c",
 
     "-LC:/msys64/mingw64/lib",
     "-lgtk-4",
