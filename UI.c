@@ -103,6 +103,25 @@ static void action_open(GSimpleAction *action, GVariant *parameter, gpointer dat
 
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
+
+static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
+{
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
+    GFile *file = gtk_file_dialog_save_finish(dialog, res, NULL);
+
+    if (file != NULL) {
+        char *path = g_file_get_path(file);
+
+        save_as_file(path, text_buffer);
+
+        strcpy(current_file, path);
+        file_opened = 1;
+
+        g_free(path);
+        g_object_unref(file);
+    }
+}
+
 static void action_save(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
     if (!file_opened) {
@@ -120,23 +139,6 @@ static void action_save(GSimpleAction *action, GVariant *parameter, gpointer dat
     /* Jika file baru dan belum punya nama, arahkan ke Save As */
     GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
-}
-static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
-{
-    GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
-    GFile *file = gtk_file_dialog_save_finish(dialog, res, NULL);
-
-    if (file != NULL) {
-        char *path = g_file_get_path(file);
-
-        save_as_file(path, text_buffer);
-
-        strcpy(current_file, path);
-        file_opened = 1;
-
-        g_free(path);
-        g_object_unref(file);
-    }
 }
 
 static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer data)
