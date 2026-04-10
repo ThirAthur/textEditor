@@ -101,7 +101,7 @@ static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
     if (file != NULL) {
         char *path = g_file_get_path(file);
 
-        save_file(path, text_buffer);
+        save_as_file(path, text_buffer);
 
         strcpy(current_file, path);
         file_opened = 1;
