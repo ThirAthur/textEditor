@@ -34,3 +34,28 @@ void open_file(const char *filename, char text_buffer[][COL])
 
     fclose(fp);
 }
+
+void save_as_file(const char *filename, char text_buffer[][COL])
+{
+    FILE *fp = fopen(filename, "w");
+
+    if (fp == NULL) {
+        printf("Gagal menyimpan file\n");
+        return;
+    }
+
+    for (int i = 0; i < ROW; i++) {
+
+        if (text_buffer[i][0] == '\0')
+            break;
+
+        fprintf(fp, "%s", text_buffer[i]);
+
+        // tambah newline jika masih ada baris berikutnya
+        if (i < ROW - 1 && text_buffer[i + 1][0] != '\0') {
+            fprintf(fp, "\n");
+        }
+    }
+
+    fclose(fp);
+}
