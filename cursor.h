@@ -3,11 +3,10 @@
 
 #include "Array.h"
 
-void cursor_insert_char(char text[ROW][COL], int *row, int *col, char ch);
-void cursor_backspace(char text[ROW][COL], int *row, int *col);
-void cursor_delete(char text[ROW][COL], int *row, int *col);
-void cursor_enter(char text[ROW][COL], int *row, int *col);
-void cursor_merge_line(char text[ROW][COL], int *row, int *col);
+void shift_line_right(char text[ROW][COL], int row, int col);
+void shift_line_left(char text[ROW][COL], int row, int col);
+void insert_empty_line(char text[ROW][COL], int row);
+void merge_line(char text[ROW][COL], int *row, int *col);
 void cursor_move_left(char text[ROW][COL], int *row, int *col);
 void cursor_move_right(char text[ROW][COL], int *row, int *col);
 void cursor_move_up(char text[ROW][COL], int *row, int *col);
