@@ -25,7 +25,7 @@ void open_file(const char *filename, char text_buffer[][COL])
 
     while (fgets(line, sizeof(line), fp) != NULL && i < ROW) {
 
-        line[strcspn(line, "\0")] = '\0';
+        line[strcspn(line, "\n")] = '\0';
 
         strcpy(text_buffer[i], line);
 
