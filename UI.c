@@ -2,6 +2,7 @@
 #include <string.h>
 #include "Array.h"
 #include "file.h"
+#include "edit.h"
 #include "cursor.h"
 
 char current_file[256] = "";
@@ -143,12 +144,33 @@ static void action_close(GSimpleAction *action, GVariant *parameter, gpointer da
     gtk_widget_grab_focus(text);
 }
 
+static void action_copy(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    copy_selected_text(GTK_TEXT_VIEW(text));
+}
+
+/* TAMBAHAN: fungsi paste */
+static void action_paste(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    paste_clipboard_text(text_buffer, &row_pos, &col_pos);
+    gui_update();
+}
 
 //penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
 {
+    if((state & GDK_CONTROL_MASK) &&
+       (keyval == GDK_KEY_c || keyval == GDK_KEY_C)){
+        copy_selected_text(GTK_TEXT_VIEW(text));
+        return TRUE;
+    }
+
+    if((state & GDK_CONTROL_MASK) &&
+       (keyval == GDK_KEY_v || keyval == GDK_KEY_V)){
+        paste_clipboard_text(text_buffer, &row_pos, &col_pos);
+        gui_update();
     int alert = 0;
     printf("file_opened = %d\n", file_opened);
     if (!file_opened) {
@@ -305,6 +327,14 @@ void activate(GtkApplication *app, gpointer user_data)
     g_signal_connect(new_action, "activate", G_CALLBACK(action_new), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));
 
+    GSimpleAction *copy_action = g_simple_action_new("copy", NULL);
+    g_signal_connect(copy_action, "activate", G_CALLBACK(action_copy), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(copy_action));
+
+    GSimpleAction *paste_action = g_simple_action_new("paste", NULL);
+    g_signal_connect(paste_action, "activate", G_CALLBACK(action_paste), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(paste_action));
+}
     GSimpleAction *open_action = g_simple_action_new("open", NULL);
     g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(open_action));
