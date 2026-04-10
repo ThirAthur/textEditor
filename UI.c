@@ -161,6 +161,8 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
 {
+    int alert = 0;
+    int state = 0;
     if((state & GDK_CONTROL_MASK) &&
        (keyval == GDK_KEY_c || keyval == GDK_KEY_C)){
         copy_selected_text(GTK_TEXT_VIEW(text));
@@ -171,7 +173,8 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
        (keyval == GDK_KEY_v || keyval == GDK_KEY_V)){
         paste_clipboard_text(text_buffer, &row_pos, &col_pos);
         gui_update();
-    int alert = 0;
+       }
+   
     printf("file_opened = %d\n", file_opened);
     if (!file_opened) {
         if(!alert){
@@ -334,7 +337,7 @@ void activate(GtkApplication *app, gpointer user_data)
     GSimpleAction *paste_action = g_simple_action_new("paste", NULL);
     g_signal_connect(paste_action, "activate", G_CALLBACK(action_paste), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(paste_action));
-}
+
     GSimpleAction *open_action = g_simple_action_new("open", NULL);
     g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(open_action));
