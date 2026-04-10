@@ -1,7 +1,8 @@
 #include <gtk/gtk.h>
-#include "Array.h"
 #include <string.h>
+#include "Array.h"
 #include "file.h"
+#include "cursor.h"
 
 char current_file[256] = "";
 int file_opened = 0;
@@ -10,13 +11,20 @@ static GtkWidget *text;
 
 static void gui_update()
 {
-    int pos, len;
-
+    int pos = 0, len = 0;
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
     char display[ROW * (COL + 1)];
-    pos = 0;
+    
+    int max_row = row_pos; 
+    for (int i = 0; i < ROW; i++) {
+        if (text_buffer[i][0] != '\0') {
+            if (i > max_row) {
+                max_row = i;
+            }
+        }
+    }
 
-    for(int i = 0; i < ROW; i++){
+    for(int i = 0; i <= max_row; i++){
         len = strlen(text_buffer[i]);
 
         if(pos + len + 2 >= sizeof(display))
@@ -24,11 +32,23 @@ static void gui_update()
 
         memcpy(&display[pos], text_buffer[i], len);
         pos += len;
+        
+        if (i < max_row) {
+            display[pos] = '\n'; 
+            pos++;
+        }
     }
 
     display[pos] = '\0';
+    
     gtk_text_buffer_set_text(buffer, display, -1);
 
+    GtkTextIter iter;
+    gtk_text_buffer_get_iter_at_line_offset(buffer, &iter, row_pos, col_pos);
+    gtk_text_buffer_place_cursor(buffer, &iter);
+
+    GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(text), mark, 0.0, FALSE, 0.0, 0.0);
 }
 
 static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
@@ -90,6 +110,22 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         new_line(text_buffer, &row_pos, &col_pos);
     } 
 
+    else if(keyval == GDK_KEY_Left){
+        cursor_move_left(text_buffer, &row_pos, &col_pos);
+    }
+
+    else if(keyval == GDK_KEY_Right){
+        cursor_move_right(text_buffer, &row_pos, &col_pos);
+    }
+
+    else if(keyval == GDK_KEY_Up){
+        cursor_move_up(text_buffer, &row_pos, &col_pos);
+    }
+
+    else if(keyval == GDK_KEY_Down){
+        cursor_move_down(text_buffer, &row_pos, &col_pos);
+    }
+
     else if(keyval >= 32 && keyval <= 126){
         insert_char(text_buffer, &row_pos, &col_pos, (char)keyval);
     }
@@ -102,6 +138,21 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
     gui_update();
 
     return TRUE;
+}
+
+static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, double y, gpointer data)
+{
+    GtkTextIter iter;
+    int buffer_x, buffer_y;
+
+    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(text), GTK_TEXT_WINDOW_WIDGET, (int)x, (int)y, &buffer_x, &buffer_y);
+
+    gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(text), &iter, buffer_x, buffer_y);
+
+    int target_row = gtk_text_iter_get_line(&iter);
+    int target_col = gtk_text_iter_get_line_offset(&iter);
+
+    set_cursor_position(text_buffer, &row_pos, &col_pos, target_row, target_col);
 }
 
 // Menu setting
@@ -155,7 +206,7 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *window;
     GtkWidget *box;
     GtkWidget *menu;
-
+    GtkWidget *scroll;
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "TeDit");
@@ -167,18 +218,23 @@ void activate(GtkApplication *app, gpointer user_data)
     menu = createMenuBar();
     gtk_box_append(GTK_BOX(box), menu);
 
+    scroll = gtk_scrolled_window_new();
     text = gtk_text_view_new();
 
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD_CHAR);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text);
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_widget_set_vexpand(scroll, TRUE);
 
-    gtk_box_append(GTK_BOX(box), text);
-    gtk_widget_set_hexpand(text, TRUE);
-    gtk_widget_set_vexpand(text, TRUE);
-
+    gtk_box_append(GTK_BOX(box), scroll);
+    
     GtkEventController *controller = gtk_event_controller_key_new();
     g_signal_connect(controller, "key-pressed", G_CALLBACK(key_pressed), NULL);
+    GtkGesture *click_controller = gtk_gesture_click_new();
+    g_signal_connect(click_controller, "pressed", G_CALLBACK(mouse_clicked), NULL);
 
     gtk_widget_add_controller(text, controller);
+    gtk_widget_add_controller(text, GTK_EVENT_CONTROLLER(click_controller));
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));

@@ -13,5 +13,6 @@ void delete_char(char text[ROW][COL], int *r, int *c);
 void indention(char text[ROW][COL], int *r, int *c);
 void array_checker(char text[ROW][COL], int *r, int *c);
 void new_line(char text[ROW][COL], int *r, int *c);
+void set_cursor_position(char text[ROW][COL], int *r, int *c, int target_r, int target_c);
 
 #endif
