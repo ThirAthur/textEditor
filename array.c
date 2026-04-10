@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Array.h"
+#include "cursor.h"
 
 char text_buffer[ROW][COL] = {0};
 int row_pos = 0;
@@ -8,63 +9,58 @@ int col_pos = 0;
 
 void insert_char(char text[ROW][COL], int *r, int *c, char ch)
 {
-    if(*r >= ROW)
+    if (*r >= ROW - 1) {
         return;
-
-    if (*c >= COL - 1) {
+    }
+    
+    if (strlen(text[*r]) >= COL - 1) {
         new_line(text, r, c);
     }
 
-    if(*c < COL - 1){
+    if (strlen(text[*r]) < COL - 1) {
+        shift_line_right(text, *r, *c);
         text[*r][*c] = ch;
         (*c)++;
-        text[*r][*c] = '\0';
     }
+
 }
 
 void new_line(char text[ROW][COL], int *r, int *c)
 {
-    if(*r >= ROW)
+    if(*r >= ROW - 1)
         return;
 
-    if(*c < COL - 1){
-        text[*r][*c] = '\n';
-        text[*r][*c + 1] = '\0';
-    }
+    insert_empty_line(text, *r + 1);
+    strcpy(text[*r + 1], &text[*r][*c]);
+    text[*r][*c] = '\0';
 
-    if(*r < ROW - 1){
-        (*r)++;
-        *c = 0;
-    }
+    (*r)++;
+    *c = 0;
 }
 
 void delete_char(char text[ROW][COL], int *r, int *c)
 {
     int tab = 0;
-    if(*c > 0){
+    if(*c >= 4){
         for (int i = 1; i <= 4; i++){
             if (text[*r][*c - i] == ' '){
                 tab++;
             }
         }
-        if(tab == 4)
-        {
-            for(int i = 1; i <= 4; i++){
-                text[*r][*c - i] = '\0';
-            }
-            *c -= 4;
-        }
-        else{
+    }
+    if(tab == 4)
+    {
+        for(int i = 1; i <= 4; i++){
             (*c)--;
-            text[*r][*c] = '\0';
+            shift_line_left(text, *r, *c);
         }
-    } else if(*r > 0){
-        (*r)--;
-        *c = strlen(text[*r]);
-        if (*c > 0 && text[*r][*c - 1] == '\n') {
-            (*c)--;
-            text[*r][*c] = '\0';
-        }
+    }
+    else if (*c > 0){
+        (*c)--;
+        shift_line_left(text, *r, *c);
+    }
+    else if(*r > 0){
+    merge_line(text, r, c);
     }
 }
 
@@ -72,6 +68,20 @@ void indention(char text[ROW][COL], int *r, int *c)
 {
     for(int i = 0; i < 4; i++){
         insert_char(text, r, c, ' ');
+    }
+}
+
+void set_cursor_position(char text[ROW][COL], int *r, int *c, int target_r, int target_c)
+{
+    if (target_r < 0 || target_r >= ROW || target_c < 0 || target_c >= COL) {
+        return;
+    }
+
+    *r = target_r;
+    *c = target_c;
+
+    if (*c > strlen(text[*r])) {
+        *c = strlen(text[*r]);
     }
 }
 
