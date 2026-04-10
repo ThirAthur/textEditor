@@ -4,7 +4,7 @@
 
 void create_file(char text_buffer[][COL])
 {
-    for(int i = 0; i < ROW; i++){
+    for (int i = 0; i < ROW; i++) {
         text_buffer[i][0] = '\0';
     }
 }
@@ -35,7 +35,7 @@ void open_file(const char *filename, char text_buffer[][COL])
     fclose(fp);
 }
 
-void save_as_file(const char *filename, char text_buffer[][COL])
+void save_file(const char *filename, char text_buffer[][COL])
 {
     FILE *fp = fopen(filename, "w");
 
@@ -57,4 +57,8 @@ void save_as_file(const char *filename, char text_buffer[][COL])
     }
 
     fclose(fp);
+}
+void save_as_file(const char *filename, char text_buffer[][COL])
+{
+    save_file(filename, text_buffer);
 }

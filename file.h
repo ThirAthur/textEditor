@@ -7,6 +7,8 @@ void create_file(char text_buffer[][COL]);
 
 void open_file(const char *filename, char text_buffer[][COL]);
 
+void save_file(const char *filename, char text_buffer[][COL]);
+
 void save_as_file(const char *filename, char text_buffer[][COL]);
 
 #endif
