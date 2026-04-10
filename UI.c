@@ -103,7 +103,24 @@ static void action_open(GSimpleAction *action, GVariant *parameter, gpointer dat
 
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
+static void action_save(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
 
+    /* Jika file sudah punya nama/path, langsung save */
+    if (current_file[0] != '\0') {
+        save_file(current_file, text_buffer);
+        gtk_widget_grab_focus(text);
+        return;
+    }
+
+    /* Jika file baru dan belum punya nama, arahkan ke Save As */
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
+}
 static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
 {
     GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
@@ -342,6 +359,10 @@ void activate(GtkApplication *app, gpointer user_data)
     g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(open_action));
 
+    GSimpleAction *save_action = g_simple_action_new("save", NULL);
+    g_signal_connect(save_action, "activate", G_CALLBACK(action_save), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_action));
+    
     GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
     g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
