@@ -1,7 +1,9 @@
 #include <gtk/gtk.h>
 #include <string.h>
 #include "Array.h"
-#include "file.h"
+#include "deva.h"
+#include "shortcut.h"
+#include"file.h"
 #include "edit.h"
 #include "cursor.h"
 
@@ -63,14 +65,12 @@ static void warning(GtkWindow *parent)
 
 static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    create_file(text_buffer);
-    
+    create_file(&Lisi, &Lnama);       
+    memset(text_buffer, 0, sizeof(text_buffer));
     row_pos = 0;
     col_pos = 0;
-    
-    current_file[0] = '\0';
     file_opened = 1;
-
+    current_file[0] = '\0';
     gui_update();
     gtk_widget_grab_focus(text);
 }
@@ -83,13 +83,11 @@ static void open_response(GObject *source, GAsyncResult *res, gpointer data)
     if (file != NULL) {
         char *path = g_file_get_path(file);
 
-        open_file(path, text_buffer);
-
+        open_file(&Lisi, &Lnama, path);      
         strcpy(current_file, path);
         file_opened = 1;
 
         gui_update();
-
         gtk_widget_grab_focus(text);
 
         g_free(path);
@@ -99,9 +97,16 @@ static void open_response(GObject *source, GAsyncResult *res, gpointer data)
 
 static void action_open(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    GtkFileDialog *dialog = gtk_file_dialog_new();
+    if (file_opened == 1) {
 
+        close_file(&Lisi, &Lnama);
+        memset(text_buffer, 0, sizeof(text_buffer));
+        file_opened = 0;
+    }
+
+    GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
+    g_object_unref(dialog);
 }
 
 static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
@@ -112,8 +117,7 @@ static void save_as_response(GObject *source, GAsyncResult *res, gpointer data)
     if (file != NULL) {
         char *path = g_file_get_path(file);
 
-        save_as_file(path, text_buffer);
-
+        save_as_file(&Lisi, &Lnama, path);        
         strcpy(current_file, path);
         file_opened = 1;
 
@@ -135,7 +139,6 @@ static void action_save(GSimpleAction *action, GVariant *parameter, gpointer dat
         gtk_widget_grab_focus(text);
         return;
     }
-
     /* Jika file baru dan belum punya nama, arahkan ke Save As */
     GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
@@ -143,23 +146,28 @@ static void action_save(GSimpleAction *action, GVariant *parameter, gpointer dat
 
 static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    GtkFileDialog *dialog = gtk_file_dialog_new();
+    if (!file_opened) {
+        warning(GTK_WINDOW(gtk_widget_get_root(text)));
+        return;
+    }
 
+    GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
+    g_object_unref(dialog);
 }
 
 static void action_close(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    create_file(text_buffer);
+    if (!file_opened) return;
 
+    close_file(&Lisi, &Lnama);             
+    memset(text_buffer, 0, sizeof(text_buffer));
     row_pos = 0;
     col_pos = 0;
-
     current_file[0] = '\0';
     file_opened = 0;
 
     gui_update();
-
     gtk_widget_grab_focus(text);
 }
 
@@ -194,7 +202,6 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         gui_update();
        }
    
-    printf("file_opened = %d\n", file_opened);
     if (!file_opened) {
         if(!alert){
             warning(NULL);
@@ -314,7 +321,11 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *menu;
     GtkWidget *scroll;
 
+    CreateList(&Lisi);
+    CreateList(&Lnama);
+
     window = gtk_application_window_new(app);
+    setup_shortcuts(window);
     gtk_window_set_title(GTK_WINDOW(window), "Text Editor. By : Sendal Jepit Team");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
@@ -345,9 +356,15 @@ void activate(GtkApplication *app, gpointer user_data)
     gui_update();
     gtk_window_present(GTK_WINDOW(window));
 
-    GSimpleAction *new_action = g_simple_action_new("new", NULL);
-    g_signal_connect(new_action, "activate", G_CALLBACK(action_new), NULL);
-    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));
+    GSimpleAction *new_action = g_simple_action_new("new", NULL);       // buat action new
+    g_signal_connect(                                                   // jika new_action terpanggil, maka panggil callback (hanya menghubungkan)
+        new_action,                                                     
+        "activate", 
+        G_CALLBACK(action_new), 
+        NULL
+    );
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));       // mapping sehingga app.new dikenali oleh 
+                                                                            // shortcut dan gmenu
 
     GSimpleAction *copy_action = g_simple_action_new("copy", NULL);
     g_signal_connect(copy_action, "activate", G_CALLBACK(action_copy), NULL);
@@ -365,9 +382,9 @@ void activate(GtkApplication *app, gpointer user_data)
     g_signal_connect(save_action, "activate", G_CALLBACK(action_save), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_action));
     
-    GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
+    GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);           
     g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
-    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));               // app.save_as
 
     GSimpleAction *close_action = g_simple_action_new("close", NULL);
     g_signal_connect(close_action, "activate", G_CALLBACK(action_close), NULL);
