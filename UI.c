@@ -1,65 +1,75 @@
 #include <gtk/gtk.h>
 #include <string.h>
-#include "Array.h"
+#include <stdlib.h>
+#include "Fathir.h"
+#include "shortcut.h"
 #include "deva.h"
 #include "shortcut.h"
-#include"file.h"
-#include "edit.h"
 #include "cursor.h"
+
+// Variabel Global Baru untuk Linked List
+List text_list;
+address poscursor;
+int col_pos = 0;
 
 char current_file[256] = "";
 int file_opened = 0;
 
-static GtkWidget *text;
+static GtkWidget *text_view;
+
+// Helper: Mencari baris ke-berapa kursor berada sekarang untuk keperluan visualisasi GTK
+int get_current_row_index() {
+    int row = 0;
+    address P = First(text_list);
+    while (P != NULL && P != poscursor) {
+        row++;
+        P = P->next;
+    }
+    return row;
+}
+
+// Inisialisasi awal list kosong
+void init_editor() {
+    CreateList(&text_list);
+    char empty_line[clmn] = "";
+    InsChFirst(&text_list, empty_line);
+    poscursor = First(text_list);
+    col_pos = 0;
+}
 
 static void gui_update()
 {
-    int pos = 0, len = 0;
-    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
-    char display[ROW * (COL + 1)];
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     
-    int max_row = row_pos; 
-    for (int i = 0; i < ROW; i++) {
-        if (text_buffer[i][0] != '\0') {
-            if (i > max_row) {
-                max_row = i;
-            }
-        }
-    }
-
-    for(int i = 0; i <= max_row; i++){
-        len = strlen(text_buffer[i]);
-
-        if(pos + len + 2 >= sizeof(display))
-            break;
-
-        memcpy(&display[pos], text_buffer[i], len);
-        pos += len;
-        
-        if (i < max_row) {
-            display[pos] = '\n'; 
-            pos++;
-        }
-    }
-
-    display[pos] = '\0';
+    // Menggunakan GString bawaan GLib untuk menggabungkan teks dari Linked List
+    GString *display_str = g_string_new("");
+    address P = First(text_list);
     
-    gtk_text_buffer_set_text(buffer, display, -1);
+    while (P != NULL) {
+        g_string_append(display_str, P->info);
+        if (P->next != NULL) {
+            g_string_append_c(display_str, '\n');
+        }
+        P = P->next;
+    }
+    
+    gtk_text_buffer_set_text(buffer, display_str->str, -1);
+    g_string_free(display_str, TRUE);
 
+    // Set kursor visual GTK
+    int current_row = get_current_row_index();
     GtkTextIter iter;
-    gtk_text_buffer_get_iter_at_line_offset(buffer, &iter, row_pos, col_pos);
+    gtk_text_buffer_get_iter_at_line_offset(buffer, &iter, current_row, col_pos);
     gtk_text_buffer_place_cursor(buffer, &iter);
 
     GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);
-    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(text), mark, 0.0, FALSE, 0.0, 0.0);
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(text_view), mark, 0.0, FALSE, 0.0, 0.0);
 }
 
 static void warning(GtkWindow *parent)
 {
-    GtkAlertDialog *dialog = gtk_alert_dialog_new("Tidak ada FIle aktif");
-
+    GtkAlertDialog *dialog = gtk_alert_dialog_new("Tidak ada File aktif");
     gtk_alert_dialog_set_detail(dialog, "Gunakan Fitur New untuk mulai menulis");
-
     gtk_alert_dialog_show(dialog, parent); 
 }
 
@@ -173,34 +183,32 @@ static void action_close(GSimpleAction *action, GVariant *parameter, gpointer da
 
 static void action_copy(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    copy_selected_text(GTK_TEXT_VIEW(text));
+    // TODO: Sesuaikan dengan edit.c versi Linked List
+    g_print("Fitur Copy belum dihubungkan dengan Linked List.\n");
 }
 
-/* TAMBAHAN: fungsi paste */
 static void action_paste(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    paste_clipboard_text(text_buffer, &row_pos, &col_pos);
-    gui_update();
+    // TODO: Sesuaikan dengan edit.c versi Linked List
+    g_print("Fitur Paste belum dihubungkan dengan Linked List.\n");
 }
 
-//penerapan array untuk menyimpan teks yang diinputkan (dalam uji coba sementara)
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
 {
     int alert = 0;
-    int state = 0;
-    if((state & GDK_CONTROL_MASK) &&
-       (keyval == GDK_KEY_c || keyval == GDK_KEY_C)){
-        copy_selected_text(GTK_TEXT_VIEW(text));
+    GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(controller));
+    
+    if((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)){
+        action_copy(NULL, NULL, NULL);
         return TRUE;
     }
 
-    if((state & GDK_CONTROL_MASK) &&
-       (keyval == GDK_KEY_v || keyval == GDK_KEY_V)){
-        paste_clipboard_text(text_buffer, &row_pos, &col_pos);
-        gui_update();
-       }
+    if((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_v || keyval == GDK_KEY_V)){
+        action_paste(NULL, NULL, NULL);
+        return TRUE;
+    }
    
     if (!file_opened) {
         if(!alert){
@@ -211,44 +219,35 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
     }
 
     if(keyval == GDK_KEY_BackSpace){
-        delete_char(text_buffer, &row_pos, &col_pos);
+        delete_char(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval == GDK_KEY_Tab){
-        indention(text_buffer, &row_pos, &col_pos);
+        indention(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval == GDK_KEY_Return){
-        new_line(text_buffer, &row_pos, &col_pos);
+        new_line(&text_list, &poscursor, &col_pos);
     } 
-
     else if(keyval == GDK_KEY_Left){
-        cursor_move_left(text_buffer, &row_pos, &col_pos);
+        cursor_move_left(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval == GDK_KEY_Right){
-        cursor_move_right(text_buffer, &row_pos, &col_pos);
+        cursor_move_right(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval == GDK_KEY_Up){
-        cursor_move_up(text_buffer, &row_pos, &col_pos);
+        cursor_move_up(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval == GDK_KEY_Down){
-        cursor_move_down(text_buffer, &row_pos, &col_pos);
+        cursor_move_down(&text_list, &poscursor, &col_pos);
     }
-
     else if(keyval >= 32 && keyval <= 126){
-        insert_char(text_buffer, &row_pos, &col_pos, (char)keyval);
+        insert_char(&text_list, &poscursor, &col_pos, (char)keyval);
     }
-
     else{
-        return FALSE;
+        return FALSE; // Biarkan GTK menghandle shortcut lain
     }
 
-    array_checker(text_buffer, &row_pos, &col_pos);
+    array_checker(text_list, poscursor);
     gui_update();
-
     return TRUE;
 }
 
@@ -257,65 +256,66 @@ static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, doubl
     GtkTextIter iter;
     int buffer_x, buffer_y;
 
-    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(text), GTK_TEXT_WINDOW_WIDGET, (int)x, (int)y, &buffer_x, &buffer_y);
-
-    gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(text), &iter, buffer_x, buffer_y);
+    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(text_view), GTK_TEXT_WINDOW_WIDGET, (int)x, (int)y, &buffer_x, &buffer_y);
+    gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(text_view), &iter, buffer_x, buffer_y);
 
     int target_row = gtk_text_iter_get_line(&iter);
     int target_col = gtk_text_iter_get_line_offset(&iter);
 
-    set_cursor_position(text_buffer, &row_pos, &col_pos, target_row, target_col);
+    // Iterasi list untuk mencari baris tujuan klik
+    address P = First(text_list);
+    int r = 0;
+    while (P != NULL && r < target_row) {
+        P = P->next;
+        r++;
+    }
+
+    if (P != NULL) {
+        poscursor = P;
+        col_pos = target_col;
+        if (col_pos > strlen(poscursor->info)) {
+            col_pos = strlen(poscursor->info);
+        }
+    }
+    
+    gui_update();
 }
 
-// Menu setting
 GMenu *createFileMenu()
 {
-    GMenu *file_menu;
-
-    file_menu = g_menu_new();
-
+    GMenu *file_menu = g_menu_new();
     g_menu_append(file_menu, "New", "app.new");
     g_menu_append(file_menu, "Open", "app.open");
     g_menu_append(file_menu, "Save", "app.save");
     g_menu_append(file_menu, "Save As", "app.save_as");
     g_menu_append(file_menu, "Close File", "app.close");
-    g_menu_append(file_menu, "Exit", "app.exit");
-
+    g_menu_append(file_menu, "Exit", "app.exit"); // Pastikan action exit dikelola di main
     return file_menu;
 }
 
 GMenu *createEditMenu()
 {
-    GMenu *edit_menu;
-
-    edit_menu = g_menu_new();
-
+    GMenu *edit_menu = g_menu_new();
     g_menu_append(edit_menu, "Undo", "app.undo");
     g_menu_append(edit_menu, "Redo", "app.redo");
     g_menu_append(edit_menu, "Copy", "app.copy");
     g_menu_append(edit_menu, "Paste", "app.paste");
-
     return edit_menu;
 }
 
 GtkWidget *createMenuBar()
 {
-    GMenu *menubar;
-    GtkWidget *menu_widget;
-
-    menubar = g_menu_new();
-
+    GMenu *menubar = g_menu_new();
     g_menu_append_submenu(menubar, "File", G_MENU_MODEL(createFileMenu()));
     g_menu_append_submenu(menubar, "Edit", G_MENU_MODEL(createEditMenu()));
-
-    menu_widget = gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menubar));
-
-    return menu_widget;
+    return gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menubar));
 }
 
-// Aktivasi dan memunculkan window
 void activate(GtkApplication *app, gpointer user_data)
 {
+    // Inisiasi data editor pertama kali
+    init_editor();
+
     GtkWidget *window;
     GtkWidget *box;
     GtkWidget *menu;
@@ -325,7 +325,7 @@ void activate(GtkApplication *app, gpointer user_data)
     CreateList(&Lnama);
 
     window = gtk_application_window_new(app);
-    setup_shortcuts(window);
+    setup_shortcuts(window); 
     gtk_window_set_title(GTK_WINDOW(window), "Text Editor. By : Sendal Jepit Team");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
@@ -336,22 +336,26 @@ void activate(GtkApplication *app, gpointer user_data)
     gtk_box_append(GTK_BOX(box), menu);
 
     scroll = gtk_scrolled_window_new();
-    text = gtk_text_view_new();
+    text_view = gtk_text_view_new();
 
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD_CHAR);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text);
-    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text_view);
+    gtk_widget_set_halign(scroll, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(scroll, 666, -1);
+
+    gtk_widget_set_hexpand(scroll, FALSE);
     gtk_widget_set_vexpand(scroll, TRUE);
-
+    gtk_widget_set_margin_start(text_view, 10);
+    gtk_widget_set_margin_end(text_view, 10);
     gtk_box_append(GTK_BOX(box), scroll);
     
     GtkEventController *controller = gtk_event_controller_key_new();
     g_signal_connect(controller, "key-pressed", G_CALLBACK(key_pressed), NULL);
+    
     GtkGesture *click_controller = gtk_gesture_click_new();
     g_signal_connect(click_controller, "pressed", G_CALLBACK(mouse_clicked), NULL);
 
-    gtk_widget_add_controller(text, controller);
-    gtk_widget_add_controller(text, GTK_EVENT_CONTROLLER(click_controller));
+    gtk_widget_add_controller(text_view, controller);
+    gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(click_controller));
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));

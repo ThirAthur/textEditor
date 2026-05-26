@@ -1,112 +1,84 @@
 #include <stdio.h>
 #include <string.h>
-#include "Array.h"
+#include "Fathir.h"
 #include "cursor.h"
 
-char text_buffer[ROW][COL] = {0};
-int row_pos = 0;
-int col_pos = 0;
-
-void insert_char(char text[ROW][COL], int *r, int *c, char ch)
+void new_line(List *L, address *poscursor, int *c)
 {
-    if (*r >= ROW - 1) {
-        return;
+    char right_part[clmn] = {0};
+    
+    strcpy(right_part, &(*poscursor)->info[*c]); 
+    (*poscursor)->info[*c] = '\0'; 
+    InsChAfter(L, right_part, poscursor);
+    
+    *c = 0; 
+}
+
+void insert_char(List *L, address *poscursor, int *c, char ch)
+{
+    int len = strlen((*poscursor)->info);
+    
+    if (len >= clmn - 1) {
+        new_line(L, poscursor, c);
+    }
+
+    len = strlen((*poscursor)->info);
+    for (int i = len; i >= *c; i--) {
+        (*poscursor)->info[i + 1] = (*poscursor)->info[i];
     }
     
-    if (strlen(text[*r]) >= COL - 1) {
-        new_line(text, r, c);
-    }
-
-    if (strlen(text[*r]) < COL - 1) {
-        shift_line_right(text, *r, *c);
-        text[*r][*c] = ch;
-        (*c)++;
-    }
-
+    (*poscursor)->info[*c] = ch;
+    (*c)++;
 }
 
-void new_line(char text[ROW][COL], int *r, int *c)
+void merge_line(List *L, address *poscursor, int *c)
 {
-    if(*r >= ROW - 1)
-        return;
+    if ((*poscursor)->prev != NULL) {
+        address prevNode = (*poscursor)->prev;
+        int prevLen = strlen(prevNode->info);
+        int currLen = strlen((*poscursor)->info);
 
-    insert_empty_line(text, *r + 1);
-    strcpy(text[*r + 1], &text[*r][*c]);
-    text[*r][*c] = '\0';
-
-    (*r)++;
-    *c = 0;
+        if (prevLen + currLen < clmn) {
+            strcat(prevNode->info, (*poscursor)->info);
+            *c = prevLen;           
+            DelChMid(L, poscursor); 
+        }
+    }
 }
 
-void delete_char(char text[ROW][COL], int *r, int *c)
+void delete_char(List *L, address *poscursor, int *c)
 {
-    int tab = 0;
-    if(*c >= 4){
-        for (int i = 1; i <= 4; i++){
-            if (text[*r][*c - i] == ' '){
-                tab++;
-            }
+    if (*c > 0) {
+        int len = strlen((*poscursor)->info);
+        for (int i = *c - 1; i < len; i++) {
+            (*poscursor)->info[i] = (*poscursor)->info[i + 1];
         }
-    }
-    if(tab == 4)
-    {
-        for(int i = 1; i <= 4; i++){
-            (*c)--;
-            shift_line_left(text, *r, *c);
-        }
-    }
-    else if (*c > 0){
         (*c)--;
-        shift_line_left(text, *r, *c);
-    }
-    else if(*r > 0){
-    merge_line(text, r, c);
+    } 
+    else if (*c == 0 && (*poscursor)->prev != NULL) {
+        merge_line(L, poscursor, c);
     }
 }
 
-void indention(char text[ROW][COL], int *r, int *c)
+void indention(List *L, address *poscursor, int *c)
 {
     for(int i = 0; i < 4; i++){
-        insert_char(text, r, c, ' ');
+        insert_char(L, poscursor, c, ' ');
     }
 }
 
-void set_cursor_position(char text[ROW][COL], int *r, int *c, int target_r, int target_c)
+void array_checker(List L, address poscursor)
 {
-    if (target_r < 0 || target_r >= ROW || target_c < 0 || target_c >= COL) {
-        return;
-    }
-
-    *r = target_r;
-    *c = target_c;
-
-    if (*c > strlen(text[*r])) {
-        *c = strlen(text[*r]);
-    }
-}
-
-void array_checker(char text[ROW][COL], int *r, int *c)
-{
-    // Loop only up to the current row to prevent "infinite" scrolling
-    for (int i = 0; i <= *r && i < ROW; i++) 
-    {
-        for (int j = 0; j < COL; j++) 
-        {
-            char ch = text[i][j];
-
-            if (ch == '\0') {
-                printf("[\\0]");
-                break;
-            } 
-            else if (ch == '\n') {
-                printf("[\\n]");
-
-            } 
-            else {
-                printf("[%c]", ch);
-            }
+    address P = First(L);
+    int baris = 1;
+    while (P != NULL) {
+        printf("Baris %d: [%s]", baris, P->info);
+        if (P == poscursor) {
+            printf(" <-- KURSOR DI SINI");
         }
         printf("\n");
+        P = P->next;
+        baris++;
     }
     printf("------------------------------\n");
 }
