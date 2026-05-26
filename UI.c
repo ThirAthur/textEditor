@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Fathir.h"
+#include "deva.h"
 #include "shortcut.h"
 #include "cursor.h"
 
@@ -76,8 +77,6 @@ static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data
     init_editor(); // Reset List
     
     current_file[0] = '\0';
-    file_opened = 1;
-
     gui_update();
     gtk_widget_grab_focus(text_view);
 }
@@ -255,6 +254,9 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *menu;
     GtkWidget *scroll;
 
+    CreateList(&Lisi);
+    CreateList(&Lnama);
+
     window = gtk_application_window_new(app);
     setup_shortcuts(window); 
     gtk_window_set_title(GTK_WINDOW(window), "Text Editor. By : Sendal Jepit Team");
@@ -291,9 +293,15 @@ void activate(GtkApplication *app, gpointer user_data)
     gui_update();
     gtk_window_present(GTK_WINDOW(window));
 
-    GSimpleAction *new_action = g_simple_action_new("new", NULL);
-    g_signal_connect(new_action, "activate", G_CALLBACK(action_new), NULL);
-    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));
+    GSimpleAction *new_action = g_simple_action_new("new", NULL);       // buat action new
+    g_signal_connect(                                                   // jika new_action terpanggil, maka panggil callback (hanya menghubungkan)
+        new_action,                                                     
+        "activate", 
+        G_CALLBACK(action_new), 
+        NULL
+    );
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(new_action));       // mapping sehingga app.new dikenali oleh 
+                                                                            // shortcut dan gmenu
 
     GSimpleAction *copy_action = g_simple_action_new("copy", NULL);
     g_signal_connect(copy_action, "activate", G_CALLBACK(action_copy), NULL);
@@ -311,9 +319,9 @@ void activate(GtkApplication *app, gpointer user_data)
     g_signal_connect(save_action, "activate", G_CALLBACK(action_save), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_action));
     
-    GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
+    GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);           
     g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
-    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));               // app.save_as
 
     GSimpleAction *close_action = g_simple_action_new("close", NULL);
     g_signal_connect(close_action, "activate", G_CALLBACK(action_close), NULL);
