@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Fathir.h"
-#include "shortcut.h"
 #include "cursor.h"
 
 // Variabel Global Baru untuk Linked List
@@ -127,6 +126,151 @@ static void action_paste(GSimpleAction *action, GVariant *parameter, gpointer da
     g_print("Fitur Paste belum dihubungkan dengan Linked List.\n");
 }
 
+static char last_search_term[256] = "";
+
+static void on_search_button_clicked(GtkWidget *widget, gpointer user_data)
+{
+    GtkEntry *entry = GTK_ENTRY(user_data);
+    const char *search_term = gtk_editable_get_text(GTK_EDITABLE(entry));
+
+    if (strlen(search_term) == 0) return;
+
+    int is_new_search = (strcmp(search_term, last_search_term) != 0);
+    strcpy(last_search_term, search_term);
+
+    address P;
+    int search_col;
+
+    if (is_new_search) {
+        P = First(text_list);
+        search_col = 0;
+    } else {
+        P = poscursor;
+        search_col = col_pos; 
+    }
+
+    int found = 0;
+    while (P != NULL) {
+        char *match_ptr = strstr(P->info + search_col, search_term);
+        if (match_ptr != NULL) {
+            poscursor = P;
+            int start_col = match_ptr - P->info;
+            col_pos = start_col + strlen(search_term);
+            found = 1;
+
+            gui_update(); 
+
+            GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+            
+            GtkTextTagTable *tag_table = gtk_text_buffer_get_tag_table(buffer);
+            GtkTextTag *tag = gtk_text_tag_table_lookup(tag_table, "highlight");
+            if (tag == NULL) {
+                gtk_text_buffer_create_tag(buffer, "highlight", 
+                                           "background", "yellow", 
+                                           "foreground", "black", 
+                                           NULL);
+            }
+
+            int current_row = get_current_row_index();
+            
+            GtkTextIter start_iter, end_iter;
+            gtk_text_buffer_get_iter_at_line_offset(buffer, &start_iter, current_row, start_col);
+            gtk_text_buffer_get_iter_at_line_offset(buffer, &end_iter, current_row, col_pos);
+            
+            gtk_text_buffer_apply_tag_by_name(buffer, "highlight", &start_iter, &end_iter);
+            break;
+        }
+        P = P->next;
+        search_col = 0;
+    }
+
+    if (!found) {
+        GtkWidget *dialog = gtk_window_new();
+        gtk_window_set_title(GTK_WINDOW(dialog), "Warning!");
+        gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
+        gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 120);
+
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+        gtk_widget_set_margin_start(box, 15);
+        gtk_widget_set_margin_end(box, 15);
+        gtk_widget_set_margin_top(box, 15);
+        gtk_widget_set_margin_bottom(box, 15);
+
+        gtk_window_set_child(GTK_WINDOW(dialog), box);
+        GtkWidget *label = gtk_label_new("Kata tidak ditemukan.");
+        gtk_box_append(GTK_BOX(box), label);
+        GtkWidget *ok_btn = gtk_button_new_with_label("OK");
+        gtk_box_append(GTK_BOX(box), ok_btn);
+
+        g_signal_connect_swapped(ok_btn, "clicked", G_CALLBACK(gtk_window_destroy), dialog);
+        gtk_window_present(GTK_WINDOW(dialog));
+
+        last_search_term[0] = '\0'; 
+    }
+}
+
+static void on_replace_button_clicked(GtkWidget *widget, gpointer user_data)
+{
+    GtkEntry *replace_entry = GTK_ENTRY(user_data);
+    GtkEntry *search_entry = GTK_ENTRY(g_object_get_data(G_OBJECT(replace_entry), "search_entry"));
+
+    const char *search_term = gtk_editable_get_text(GTK_EDITABLE(search_entry));
+    const char *replace_term = gtk_editable_get_text(GTK_EDITABLE(replace_entry));
+
+    if (strlen(search_term) == 0) return;
+
+    replaceLogic (&text_list, &poscursor, (char *)search_term, (char *)replace_term);
+
+    gui_update();
+}
+
+void callsearch_callfind()
+{
+    GtkWidget *dialog = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(dialog), "Cari Kata");
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 120);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_margin_start(box, 15);
+    gtk_widget_set_margin_end(box, 15);
+    gtk_widget_set_margin_top(box, 15);
+    gtk_widget_set_margin_bottom(box, 15);
+    gtk_window_set_child(GTK_WINDOW(dialog), box);
+
+    GtkWidget *label = gtk_label_new("Word:");
+    gtk_box_append(GTK_BOX(box), label);
+
+    GtkWidget *entry = gtk_entry_new();
+    gtk_box_append(GTK_BOX(box), entry);
+
+    GtkWidget *search_btn = gtk_button_new_with_label("Find");
+    gtk_box_append(GTK_BOX(box), search_btn);
+
+    GtkWidget *replace_label = gtk_label_new("Replace with:");
+    gtk_box_append(GTK_BOX(box), replace_label);
+
+    GtkWidget *replace_entry = gtk_entry_new();
+    gtk_box_append(GTK_BOX(box), replace_entry);
+
+    GtkWidget *replace_btn = gtk_button_new_with_label("Replace");
+    gtk_box_append(GTK_BOX(box), replace_btn);
+
+    g_object_set_data(G_OBJECT(replace_entry), "search_entry", entry);
+
+    g_signal_connect(search_btn, "clicked", G_CALLBACK(on_search_button_clicked), entry);
+    g_signal_connect(entry, "activate", G_CALLBACK(on_search_button_clicked), entry);
+
+    g_signal_connect(replace_btn, "clicked", G_CALLBACK(on_replace_button_clicked), replace_entry);
+    g_signal_connect(replace_entry, "activate", G_CALLBACK(on_replace_button_clicked), replace_entry);
+
+    gtk_window_present(GTK_WINDOW(dialog));
+}
+
+static void action_find(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    callsearch_callfind();
+}
+
 static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
@@ -180,7 +324,6 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         return FALSE; // Biarkan GTK menghandle shortcut lain
     }
 
-    array_checker(text_list, poscursor);
     gui_update();
     return TRUE;
 }
@@ -234,6 +377,7 @@ GMenu *createEditMenu()
     g_menu_append(edit_menu, "Redo", "app.redo");
     g_menu_append(edit_menu, "Copy", "app.copy");
     g_menu_append(edit_menu, "Paste", "app.paste");
+    g_menu_append(edit_menu, "Find", "app.find");
     return edit_menu;
 }
 
@@ -256,7 +400,6 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *scroll;
 
     window = gtk_application_window_new(app);
-    setup_shortcuts(window); 
     gtk_window_set_title(GTK_WINDOW(window), "Text Editor. By : Sendal Jepit Team");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
@@ -314,6 +457,10 @@ void activate(GtkApplication *app, gpointer user_data)
     GSimpleAction *save_as_action = g_simple_action_new("save_as", NULL);
     g_signal_connect(save_as_action, "activate", G_CALLBACK(action_save_as), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
+
+    GSimpleAction *find_action = g_simple_action_new("find", NULL);
+    g_signal_connect(find_action, "activate", G_CALLBACK(action_find), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(find_action));
 
     GSimpleAction *close_action = g_simple_action_new("close", NULL);
     g_signal_connect(close_action, "activate", G_CALLBACK(action_close), NULL);

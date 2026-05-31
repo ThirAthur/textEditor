@@ -37,7 +37,7 @@ void DelChLast(List *L);
 void DelChMid(List *L, address *poscursor);
 
 address searchLogic(List L, address *poscursor, char arr[100]);
-void callsearch_callfind(List *L, address *poscursor);
+void replaceLogic (List *L, address *poscursor, char arr[100], char repl[100]);
 
 void insert_char(List *L, address *poscursor, int *c, char ch);
 void delete_char(List *L, address *poscursor, int *c);
