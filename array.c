@@ -41,7 +41,7 @@ void merge_line(List *L, address *poscursor, int *c)
         if (prevLen + currLen < clmn) {
             strcat(prevNode->info, (*poscursor)->info);
             *c = prevLen;           
-            DelChMid(L, poscursor); 
+            DelChar(L, poscursor); 
         }
     }
 }
@@ -64,6 +64,39 @@ void indention(List *L, address *poscursor, int *c)
 {
     for(int i = 0; i < 4; i++){
         insert_char(L, poscursor, c, ' ');
+    }
+}
+
+address searchLogic(List L, address *poscursor, char arr[100])
+{
+    address P = First(L);
+    while (P != NULL) {
+        if (strstr(P->info, arr) != NULL) {
+            *poscursor = P;
+            return P;
+        }
+        P = P->next;
+    }
+    *poscursor = NULL; 
+    return NULL;
+}
+
+void replaceLogic (List *L, address *poscursor, char search_term[100], char replace_term[100])
+{
+    address P = *poscursor;
+    if ( P != NULL) {
+        char new_line[clmn];
+        char *match_ptr = strstr(P->info, search_term);
+        int prefix_len = match_ptr - P->info;
+
+        strncpy(new_line, P->info, prefix_len);
+        new_line[prefix_len] = '\0';
+
+        strcat(new_line, replace_term);
+        strcat(new_line, match_ptr + strlen(search_term));
+        strncpy(P->info, new_line, clmn - 1);
+
+        P->info[clmn - 1] = '\0'; 
     }
 }
 

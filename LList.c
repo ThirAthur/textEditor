@@ -146,31 +146,3 @@ void DelChMid(List *L, address *poscursor){
     *poscursor = Q;
     DeAlokasi(Rem);
 }
-
-address searchLogic(List L, address *poscursor, char arr[100]){
-    address P = First(L);
-    while (P != NULL){
-        if (strstr(P->info, arr) != NULL) {
-            return P;
-        }
-        P = P->next;
-    }
-    printf("Tidak ditemukan\n");
-    return NULL;
-}
-
-void callsearch_callfind(List *L, address *poscursor){
-    address P;
-    char arr[100];
-
-    printf("Masukkan kata yang ingin dicari: ");
-    scanf("%s", arr);
-
-    P = searchLogic(*L, poscursor, arr);
-    if (P != NULL){
-        *poscursor = P;
-        printf("Ditemukan di salah satu baris!\n");
-    } else {
-        printf("Window alert: Not found\n");
-    }
-}
