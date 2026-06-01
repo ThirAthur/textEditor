@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Fathir.h"
+#include "shortcut.h"
 #include "cursor.h"
 
 // Variabel Global Baru untuk Linked List
@@ -400,6 +401,7 @@ void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *scroll;
 
     window = gtk_application_window_new(app);
+    setup_shortcuts(window);
     gtk_window_set_title(GTK_WINDOW(window), "Text Editor. By : Sendal Jepit Team");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
