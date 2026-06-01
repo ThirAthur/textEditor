@@ -97,6 +97,7 @@ void setup_shortcuts(GtkWidget *window){
             )
         )
     );
+    
 */
 
 /*    
