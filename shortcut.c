@@ -10,7 +10,7 @@ void setup_shortcuts(GtkWidget *window){
 
     gtk_shortcut_controller_add_shortcut(controller, 
         gtk_shortcut_new (
-            gtk_keyval_trigger_new(
+            gtk_keyval_trigger_new( 
                 GDK_KEY_n,          // n 
                 GDK_CONTROL_MASK    // ctrl
             ), gtk_named_action_new(
@@ -33,7 +33,7 @@ void setup_shortcuts(GtkWidget *window){
     gtk_shortcut_controller_add_shortcut(controller, 
         gtk_shortcut_new (
             gtk_keyval_trigger_new(
-                GDK_KEY_n,          // n 
+                GDK_KEY_s,          // s 
                 GDK_CONTROL_MASK | GDK_SHIFT_MASK   // ctrl + shift
                 
             ), gtk_named_action_new(
@@ -53,6 +53,88 @@ void setup_shortcuts(GtkWidget *window){
         )
     );
 
+        gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_s,          // s
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.save"
+            )
+        )
+    );
+
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_c,          // c
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.copy"
+            )
+        )
+    );
+
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_v,          // v
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.paste"
+            )
+        )
+    );
+    
+/*
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_z,          // z
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.undo"
+            )
+        )
+    );
+*/
+
+/*    
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_y,          // y
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.redo"
+            )
+        )
+    );
+
+*/
+
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_f,          // f
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.find"
+            )
+        )
+    );
+
+
+    gtk_shortcut_controller_add_shortcut(controller, 
+        gtk_shortcut_new (
+            gtk_keyval_trigger_new(
+                GDK_KEY_h,          // h
+                GDK_CONTROL_MASK    // ctrl
+            ), gtk_named_action_new(
+                "app.replace"
+            )
+        )
+    );
         gtk_widget_add_controller(
         window,
         GTK_EVENT_CONTROLLER(controller)
