@@ -4,6 +4,7 @@
 #include "Fathir.h"
 #include "shortcut.h"
 #include "cursor.h"
+#include "edit.h"
 
 // Variabel Global Baru untuk Linked List
 List text_list;
@@ -117,14 +118,17 @@ static void action_close(GSimpleAction *action, GVariant *parameter, gpointer da
 
 static void action_copy(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    // TODO: Sesuaikan dengan edit.c versi Linked List
-    g_print("Fitur Copy belum dihubungkan dengan Linked List.\n");
+    copy_selected_text(GTK_TEXT_VIEW(text_view));
 }
 
 static void action_paste(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    // TODO: Sesuaikan dengan edit.c versi Linked List
-    g_print("Fitur Paste belum dihubungkan dengan Linked List.\n");
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
+    paste_clipboard_text(&text_list, &poscursor, &col_pos);
+    gui_update();
 }
 
 static char last_search_term[256] = "";
