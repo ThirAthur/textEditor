@@ -6,12 +6,30 @@
 void new_line(List *L, address *poscursor, int *c)
 {
     char right_part[clmn] = {0};
-    
-    strcpy(right_part, &(*poscursor)->info[*c]); 
-    (*poscursor)->info[*c] = '\0'; 
+    strcpy(right_part, &(*poscursor)->info[*c]);
+    (*poscursor)->info[*c] = '\0';
     InsChAfter(L, right_part, poscursor);
     
     *c = 0; 
+    array_checker(*L);
+}
+
+void wrapWord (List *L, address *poscursor, int *c)
+{
+    int oriC = *c;
+    while ((*poscursor)->info[*c] != ' ' && *c > 0) {
+        (*c)--;
+    }
+    if (*c == 0) {
+        *c = oriC;  
+        new_line(L, poscursor, c);
+    } else {
+        (*c)++;
+        new_line(L, poscursor, c);
+        while ((*poscursor)->info[*c] != '\0') {
+            (*c)++;
+        }
+    }
 }
 
 void insert_char(List *L, address *poscursor, int *c, char ch)
@@ -19,7 +37,7 @@ void insert_char(List *L, address *poscursor, int *c, char ch)
     int len = strlen((*poscursor)->info);
     
     if (len >= clmn - 1) {
-        new_line(L, poscursor, c);
+        wrapWord(L, poscursor, c);
     }
 
     len = strlen((*poscursor)->info);
@@ -29,6 +47,7 @@ void insert_char(List *L, address *poscursor, int *c, char ch)
     
     (*poscursor)->info[*c] = ch;
     (*c)++;
+    array_checker(*L);
 }
 
 void merge_line(List *L, address *poscursor, int *c)
@@ -58,6 +77,7 @@ void delete_char(List *L, address *poscursor, int *c)
     else if (*c == 0 && (*poscursor)->prev != NULL) {
         merge_line(L, poscursor, c);
     }
+    array_checker(*L);
 }
 
 void indention(List *L, address *poscursor, int *c)
@@ -67,51 +87,64 @@ void indention(List *L, address *poscursor, int *c)
     }
 }
 
-address searchLogic(List L, address *poscursor, char arr[100])
+boolean searchLogic(List L, address *poscursor, int *col_pos, char arr[100])
 {
-    address P = First(L);
+    address P;
+    int sCol;
+    
+    if (*poscursor == NULL) {
+        P = First(L);
+        sCol = 0;
+    } else {
+        P = *poscursor;
+        sCol = *col_pos; 
+    }
+
     while (P != NULL) {
-        if (strstr(P->info, arr) != NULL) {
+        if (strstr(P->info + sCol, arr) != NULL) {
             *poscursor = P;
-            return P;
+            *col_pos = sCol;
+            return 1;
         }
         P = P->next;
+        sCol = 0;
     }
-    *poscursor = NULL; 
-    return NULL;
+    return 0;
 }
 
-void replaceLogic (List *L, address *poscursor, char search_term[100], char replace_term[100])
+void replaceLogic(List *L, address *poscursor, int col_pos, char search_term[100], char replace_term[100])
 {
     address P = *poscursor;
-    if ( P != NULL) {
-        char new_line[clmn];
-        char *match_ptr = strstr(P->info, search_term);
-        int prefix_len = match_ptr - P->info;
+    if (P != NULL) {
+        char newText[clmn] = {0}; 
 
-        strncpy(new_line, P->info, prefix_len);
-        new_line[prefix_len] = '\0';
+        // 1. Salin bagian teks SEBELUM kata yang diganti (berdasarkan posisi kursor)
+        strncpy(newText, P->info, col_pos);
+        newText[col_pos] = '\0';
 
-        strcat(new_line, replace_term);
-        strcat(new_line, match_ptr + strlen(search_term));
-        strncpy(P->info, new_line, clmn - 1);
+        // 2. Tempelkan kata penggantinya
+        strcat(newText, replace_term);
 
+        // 3. Tempelkan sisa teks SETELAH kata yang diganti
+        strcat(newText, P->info + col_pos + strlen(search_term));
+
+        // 4. Salin kembali ke dalam linked list
+        strncpy(P->info, newText, clmn - 1);
         P->info[clmn - 1] = '\0'; 
     }
 }
 
-void array_checker(List L, address poscursor)
+void array_checker(List L)
 {
+    printf("\033[H");
+    
     address P = First(L);
-    int baris = 1;
     while (P != NULL) {
-        printf("Baris %d: [%s]", baris, P->info);
-        if (P == poscursor) {
-            printf(" <-- KURSOR DI SINI");
-        }
+        printf("[ %s ]", P->info);
         printf("\n");
         P = P->next;
-        baris++;
     }
     printf("------------------------------\n");
+
+    printf("\033[0J"); 
 }

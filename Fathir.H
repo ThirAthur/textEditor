@@ -36,14 +36,14 @@ void DelChFirst(List *L);
 void DelChLast(List *L);
 void DelChMid(List *L, address *poscursor);
 
-address searchLogic(List L, address *poscursor, char arr[100]);
-void replaceLogic (List *L, address *poscursor, char arr[100], char repl[100]);
+boolean searchLogic(List L, address *poscursor, int *col_pos, char arr[100]);
+void replaceLogic (List *L, address *poscursor, int col_pos, char arr[100], char repl[100]);
 
 void insert_char(List *L, address *poscursor, int *c, char ch);
 void delete_char(List *L, address *poscursor, int *c);
 void new_line(List *L, address *poscursor, int *c);
 void merge_line(List *L, address *poscursor, int *c);
 void indention(List *L, address *poscursor, int *c);
-void array_checker(List L, address poscursor);
+void array_checker(List L);
 
 #endif

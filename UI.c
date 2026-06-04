@@ -135,56 +135,52 @@ static void on_search_button_clicked(GtkWidget *widget, gpointer user_data)
 
     if (strlen(search_term) == 0) return;
 
+    // 1. Deteksi apakah ini kata baru yang dicari
     int is_new_search = (strcmp(search_term, last_search_term) != 0);
     strcpy(last_search_term, search_term);
 
-    address P;
-    int search_col;
-
+    // Jika pencarian baru, set kursor ke NULL agar searchLogic milikmu mulai dari First(L)
     if (is_new_search) {
-        P = First(text_list);
-        search_col = 0;
+        poscursor = NULL; 
+        col_pos = 0;
     } else {
-        P = poscursor;
-        search_col = col_pos; 
+        // Jika Find Next, geser 1 karakter agar tidak mendeteksi kata yang sama di titik yang sama
+        col_pos += 1; 
     }
 
-    int found = 0;
-    while (P != NULL) {
-        char *match_ptr = strstr(P->info + search_col, search_term);
+    // 3. Panggil fungsi searchLogic dari array.c
+    boolean found = searchLogic(text_list, &poscursor, &col_pos, (char *)search_term);
+
+    if (found) {
+        char *match_ptr = strstr(poscursor->info + col_pos, search_term);
         if (match_ptr != NULL) {
-            poscursor = P;
-            int start_col = match_ptr - P->info;
-            col_pos = start_col + strlen(search_term);
-            found = 1;
-
-            gui_update(); 
-
-            GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-            
-            GtkTextTagTable *tag_table = gtk_text_buffer_get_tag_table(buffer);
-            GtkTextTag *tag = gtk_text_tag_table_lookup(tag_table, "highlight");
-            if (tag == NULL) {
-                gtk_text_buffer_create_tag(buffer, "highlight", 
-                                           "background", "yellow", 
-                                           "foreground", "black", 
-                                           NULL);
-            }
-
-            int current_row = get_current_row_index();
-            
-            GtkTextIter start_iter, end_iter;
-            gtk_text_buffer_get_iter_at_line_offset(buffer, &start_iter, current_row, start_col);
-            gtk_text_buffer_get_iter_at_line_offset(buffer, &end_iter, current_row, col_pos);
-            
-            gtk_text_buffer_apply_tag_by_name(buffer, "highlight", &start_iter, &end_iter);
-            break;
+            col_pos = match_ptr - poscursor->info; // Dapatkan indeks asli kursor
         }
-        P = P->next;
-        search_col = 0;
-    }
 
-    if (!found) {
+        gui_update(); 
+
+        // 5. Menerapkan Blok Warna Kuning (Highlight)
+        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+        GtkTextTagTable *tag_table = gtk_text_buffer_get_tag_table(buffer);
+        GtkTextTag *tag = gtk_text_tag_table_lookup(tag_table, "highlight");
+        
+        if (tag == NULL) {
+            gtk_text_buffer_create_tag(buffer, "highlight", 
+                                       "background", "yellow", 
+                                       "foreground", "black", 
+                                       NULL);
+        }
+
+        int current_row = get_current_row_index();
+        GtkTextIter start_iter, end_iter;
+        
+        gtk_text_buffer_get_iter_at_line_offset(buffer, &start_iter, current_row, col_pos);
+        gtk_text_buffer_get_iter_at_line_offset(buffer, &end_iter, current_row, col_pos + strlen(search_term));
+        
+        gtk_text_buffer_apply_tag_by_name(buffer, "highlight", &start_iter, &end_iter);
+        
+    } else {
+        // 6. Tampilkan peringatan jika tidak ditemukan
         GtkWidget *dialog = gtk_window_new();
         gtk_window_set_title(GTK_WINDOW(dialog), "Warning!");
         gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
@@ -205,7 +201,7 @@ static void on_search_button_clicked(GtkWidget *widget, gpointer user_data)
         g_signal_connect_swapped(ok_btn, "clicked", G_CALLBACK(gtk_window_destroy), dialog);
         gtk_window_present(GTK_WINDOW(dialog));
 
-        last_search_term[0] = '\0'; 
+        last_search_term[0] = '\0'; // Reset state agar bisa dicari ulang
     }
 }
 
@@ -219,7 +215,7 @@ static void on_replace_button_clicked(GtkWidget *widget, gpointer user_data)
 
     if (strlen(search_term) == 0) return;
 
-    replaceLogic (&text_list, &poscursor, (char *)search_term, (char *)replace_term);
+    replaceLogic(&text_list, &poscursor, col_pos, (char*)search_term, (char*)replace_term);
 
     gui_update();
 }
@@ -243,7 +239,7 @@ void callsearch_callfind()
     GtkWidget *entry = gtk_entry_new();
     gtk_box_append(GTK_BOX(box), entry);
 
-    GtkWidget *search_btn = gtk_button_new_with_label("Find");
+    GtkWidget *search_btn = gtk_button_new_with_label("Search");
     gtk_box_append(GTK_BOX(box), search_btn);
 
     GtkWidget *replace_label = gtk_label_new("Replace with:");
@@ -339,23 +335,29 @@ static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, doubl
     int target_row = gtk_text_iter_get_line(&iter);
     int target_col = gtk_text_iter_get_line_offset(&iter);
 
-    // Iterasi list untuk mencari baris tujuan klik
     address P = First(text_list);
+    address last_valid_P = P; // Menyimpan node terakhir yang valid
     int r = 0;
+    
     while (P != NULL && r < target_row) {
+        last_valid_P = P; // Selalu simpan node saat ini sebelum maju ke P->next
         P = P->next;
         r++;
+    }
+
+    if (P == NULL) {
+        P = last_valid_P;
     }
 
     if (P != NULL) {
         poscursor = P;
         col_pos = target_col;
+        
+        // Mencegah kursor melebihi panjang teks di baris yang di-klik
         if (col_pos > strlen(poscursor->info)) {
             col_pos = strlen(poscursor->info);
         }
     }
-    
-    gui_update();
 }
 
 GMenu *createFileMenu()
@@ -410,16 +412,20 @@ void activate(GtkApplication *app, gpointer user_data)
     gtk_box_append(GTK_BOX(box), menu);
 
     scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     text_view = gtk_text_view_new();
+    gtk_text_view_set_monospace(GTK_TEXT_VIEW(text_view), TRUE);
 
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text_view);
     gtk_widget_set_halign(scroll, GTK_ALIGN_CENTER);
-    gtk_widget_set_size_request(scroll, 666, -1);
+    gtk_widget_set_size_request(scroll, 740, -1);
 
     gtk_widget_set_hexpand(scroll, FALSE);
     gtk_widget_set_vexpand(scroll, TRUE);
-    gtk_widget_set_margin_start(text_view, 10);
-    gtk_widget_set_margin_end(text_view, 10);
+    
+    gtk_widget_set_margin_top(scroll, 10);
+    gtk_widget_set_margin_bottom(scroll, 10);
+
     gtk_box_append(GTK_BOX(box), scroll);
     
     GtkEventController *controller = gtk_event_controller_key_new();
