@@ -34,6 +34,7 @@ void init_editor() {
     InsChFirst(&text_list, empty_line);
     poscursor = First(text_list);
     col_pos = 0;
+    edit_init_history();
 }
 
 static void gui_update()
@@ -118,17 +119,60 @@ static void action_close(GSimpleAction *action, GVariant *parameter, gpointer da
 
 static void action_copy(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
+    edit_end_session();
+
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
+
     copy_selected_text(GTK_TEXT_VIEW(text_view));
-}
+    gtk_widget_grab_focus(text_view);}
 
 static void action_paste(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    edit_end_session();
+
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
+
+    if (internal_clipboard[0] == '\0') {
+        return;
+    }
+
+    edit_begin_single_action(&text_list, poscursor, col_pos);
+    paste_clipboard_text(&text_list, &poscursor, &col_pos);
+
+    gui_update();
+    gtk_widget_grab_focus(text_view);
+}
+
+static void action_undo(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
     if (!file_opened) {
         warning(NULL);
         return;
     }
-    paste_clipboard_text(&text_list, &poscursor, &col_pos);
+
+    edit_undo(&text_list, &poscursor, &col_pos);
+
     gui_update();
+    gtk_widget_grab_focus(text_view);
+}
+
+static void action_redo(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
+
+    edit_redo(&text_list, &poscursor, &col_pos);
+
+    gui_update();
+    gtk_widget_grab_focus(text_view);
 }
 
 static char last_search_term[256] = "";
@@ -226,6 +270,11 @@ static void on_replace_button_clicked(GtkWidget *widget, gpointer user_data)
 
     replaceLogic (&text_list, &poscursor, (char *)search_term, (char *)replace_term);
 
+    if (poscursor != NULL && strstr(poscursor->info, search_term) != NULL) {
+    edit_begin_single_action(&text_list, poscursor, col_pos);
+    replaceLogic (&text_list, &poscursor, (char *)search_term, (char *)replace_term);
+    }
+
     gui_update();
 }
 
@@ -302,27 +351,35 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
     }
 
     if(keyval == GDK_KEY_BackSpace){
+        edit_begin_delete(&text_list, poscursor, col_pos);
         delete_char(&text_list, &poscursor, &col_pos);
     }
     else if(keyval == GDK_KEY_Tab){
+        edit_begin_typing(&text_list, poscursor, col_pos);
         indention(&text_list, &poscursor, &col_pos);
     }
     else if(keyval == GDK_KEY_Return){
+        edit_begin_typing(&text_list, poscursor, col_pos);
         new_line(&text_list, &poscursor, &col_pos);
     } 
     else if(keyval == GDK_KEY_Left){
+        edit_end_session();
         cursor_move_left(&text_list, &poscursor, &col_pos);
     }
     else if(keyval == GDK_KEY_Right){
+        edit_end_session();
         cursor_move_right(&text_list, &poscursor, &col_pos);
     }
     else if(keyval == GDK_KEY_Up){
+        edit_end_session();
         cursor_move_up(&text_list, &poscursor, &col_pos);
     }
     else if(keyval == GDK_KEY_Down){
+        edit_end_session();
         cursor_move_down(&text_list, &poscursor, &col_pos);
     }
     else if(keyval >= 32 && keyval <= 126){
+        edit_begin_typing(&text_list, poscursor, col_pos);
         insert_char(&text_list, &poscursor, &col_pos, (char)keyval);
     }
     else{
@@ -335,6 +392,8 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
 
 static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, double y, gpointer data)
 {
+    edit_end_session();
+
     GtkTextIter iter;
     int buffer_x, buffer_y;
 
@@ -451,6 +510,14 @@ void activate(GtkApplication *app, gpointer user_data)
     GSimpleAction *paste_action = g_simple_action_new("paste", NULL);
     g_signal_connect(paste_action, "activate", G_CALLBACK(action_paste), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(paste_action));
+
+    GSimpleAction *undo_action = g_simple_action_new("undo", NULL);
+    g_signal_connect(undo_action, "activate", G_CALLBACK(action_undo), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(undo_action));
+
+    GSimpleAction *redo_action = g_simple_action_new("redo", NULL);
+    g_signal_connect(redo_action, "activate", G_CALLBACK(action_redo), NULL);
+    g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(redo_action));
 
     GSimpleAction *open_action = g_simple_action_new("open", NULL);
     g_signal_connect(open_action, "activate", G_CALLBACK(action_open), NULL);
