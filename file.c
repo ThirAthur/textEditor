@@ -2,73 +2,54 @@
 #include <stdio.h>
 #include <string.h>
 
-void create_file(char text_buffer[][COL])
-{
-    for (int i = 0; i < ROW; i++) {
-        text_buffer[i][0] = '\0';
-    }
+
+void create_file (List *L){
+    CreateList(L);
 }
 
-void open_file(const char *filename, char text_buffer[][COL])
-{
-    FILE *fp = fopen(filename, "r");
+void open_file (List *L, char *path){
+    
+    FILE *file = fopen (path, "r");
 
-    if (fp == NULL) {
-        printf("Gagal membuka file\n");
+    if (file == NULL){
+        printf("File tidak berhasil di buka!");
         return;
     }
 
-    create_file(text_buffer);
+    create_file(L);
 
-    char line[COL];
-    int i = 0;
+    char temp[clmn];
 
-    while (fgets(line, sizeof(line), fp) != NULL && i < ROW) {
-        line[strcspn(line, "\n")] = '\0';
-        strcpy(text_buffer[i], line);
-        i++;
+    while (fgets(temp, sizeof(temp), file) != NULL){
+        temp[strcspn(temp, "\n")] = 0;
+
+        InsChLast(L, temp);
     }
-
-    fclose(fp);
+    
+    fclose(file);
 }
 
-void save_file(const char *filename, char text_buffer[][COL])
-{
-    FILE *fp = fopen(filename, "w");
 
-    if (fp == NULL) {
-        printf("Gagal menyimpan file\n");
+void save_as_file (List *L, char *path){
+    FILE *file = fopen (path, "w");
+
+    if (file == NULL){
+        printf("Gagal Menyimpan File!");
         return;
     }
 
-    int last_row = -1;
+    address P = First(*L);
+    while ( P != NULL){
+        fprintf(file, "%s", P->info);
+        if (P->next != NULL){
+            fprintf(file, "\n");
 
-    /* cari baris terakhir yang masih terpakai */
-    for (int i = 0; i < ROW; i++) {
-        if (text_buffer[i][0] != '\0') {
-            last_row = i;
         }
+        P = P->next;
     }
-
-    /* kalau semua kosong, buat file kosong */
-    if (last_row == -1) {
-        fclose(fp);
-        return;
-    }
-
-    /* simpan semua baris sampai baris terakhir, termasuk baris kosong di tengah */
-    for (int i = 0; i <= last_row; i++) {
-        fprintf(fp, "%s", text_buffer[i]);
-
-        if (i < last_row) {
-            fprintf(fp, "\n");
-        }
-    }
-
-    fclose(fp);
+    fclose(file);
 }
 
-void save_as_file(const char *filename, char text_buffer[][COL])
-{
-    save_file(filename, text_buffer);
+void close_file (List *L){
+    create_file(L);
 }
