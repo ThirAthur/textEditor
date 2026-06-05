@@ -86,7 +86,7 @@ void setup_shortcuts(GtkWidget *window){
         )
     );
     
-/*
+
     gtk_shortcut_controller_add_shortcut(controller, 
         gtk_shortcut_new (
             gtk_keyval_trigger_new(
@@ -98,9 +98,7 @@ void setup_shortcuts(GtkWidget *window){
         )
     );
     
-*/
-
-/*    
+   
     gtk_shortcut_controller_add_shortcut(controller, 
         gtk_shortcut_new (
             gtk_keyval_trigger_new(
@@ -112,7 +110,6 @@ void setup_shortcuts(GtkWidget *window){
         )
     );
 
-*/
 
     gtk_shortcut_controller_add_shortcut(controller, 
         gtk_shortcut_new (
