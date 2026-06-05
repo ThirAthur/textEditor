@@ -85,6 +85,8 @@ static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data
     
     file_opened = 1;
 
+    edit_clear_history();
+
     gui_update();
     gtk_widget_grab_focus(text_view);
 }
@@ -104,6 +106,8 @@ static void open_response (GObject *source_object, GAsyncResult *res, gpointer d
 
             poscursor = First(text_list);
             col_pos = 0;
+
+            edit_clear_history();
 
             gui_update();
             g_free(path);
@@ -129,7 +133,6 @@ static void action_open(GSimpleAction *action, GVariant *parameter, gpointer dat
 
     g_object_unref(filters);
     g_object_unref(filter);
-
    
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
@@ -197,6 +200,8 @@ static void action_close(GSimpleAction *action, GVariant *parameter, gpointer da
     InsChFirst(&text_list, empty_line);
     poscursor = First(text_list);
     col_pos = 0;
+
+    edit_clear_history();
 
     file_opened = 0;
 
@@ -353,11 +358,6 @@ static void on_replace_button_clicked(GtkWidget *widget, gpointer user_data)
     if (strlen(search_term) == 0) return;
 
     replaceLogic(&text_list, &poscursor, col_pos, (char*)search_term, (char*)replace_term);
-
-    if (poscursor != NULL && strstr(poscursor->info, search_term) != NULL) {
-    edit_begin_single_action(&text_list, poscursor, col_pos);
-    replaceLogic (&text_list, &poscursor, (char *)search_term, (char *)replace_term);
-    }
 
     gui_update();
 }
@@ -543,6 +543,21 @@ static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, doubl
     }
 }
 
+static void on_copy_clipboard(GtkTextView *text_view, gpointer data)
+{
+    action_copy(NULL, NULL, NULL);
+
+    g_signal_stop_emission_by_name(text_view, "copy-clipboard");
+}
+
+static void on_paste_clipboard(GtkTextView *text_view, gpointer data)
+{
+   
+    action_paste(NULL, NULL, NULL);
+
+    g_signal_stop_emission_by_name(text_view, "paste-clipboard");
+}
+
 GMenu *createFileMenu()
 {
     GMenu *file_menu = g_menu_new();
@@ -620,6 +635,9 @@ void activate(GtkApplication *app, gpointer user_data)
 
     gtk_widget_add_controller(text_view, controller);
     gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(click_controller));
+
+    g_signal_connect(text_view, "copy-clipboard", G_CALLBACK(on_copy_clipboard), NULL);
+    g_signal_connect(text_view, "paste-clipboard", G_CALLBACK(on_paste_clipboard), NULL);
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));

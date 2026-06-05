@@ -10,7 +10,7 @@ void new_line(List *L, address *poscursor, int *c)
     (*poscursor)->info[*c] = '\0';
     InsChAfter(L, right_part, poscursor);
     
-    *c = 0; 
+    *c = 0;
     array_checker(*L);
 }
 
@@ -140,8 +140,7 @@ void array_checker(List L)
     
     address P = First(L);
     while (P != NULL) {
-        printf("[ %s ]", P->info);
-        printf("\n");
+        printf("[ %s ]\n", P->info);
         P = P->next;
     }
     printf("------------------------------\n");
