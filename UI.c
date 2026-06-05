@@ -419,10 +419,6 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
 
 
     if ((state & GDK_CONTROL_MASK)) {
-        if ((keyval == GDK_KEY_BackSpace)){
-            return FALSE;
-        }
-        
         if ((keyval == GDK_KEY_n) || (keyval == GDK_KEY_N)){
             return FALSE;
         } 
