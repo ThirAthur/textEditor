@@ -137,17 +137,6 @@ static void action_open(GSimpleAction *action, GVariant *parameter, gpointer dat
     gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
 
-
-static void action_save(GSimpleAction *action, GVariant *parameter, gpointer data)
-{
-    if (!file_opened) {
-        warning(NULL);
-        return;
-    }
-    // TODO: Sesuaikan dengan file.c versi Linked List
-    g_print("Fitur Save belum dihubungkan dengan Linked List.\n");
-}
-
 static void save_as_response (GObject *source_object, GAsyncResult *res, gpointer data)
 {
     GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
@@ -190,6 +179,23 @@ static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer 
    
     gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
 
+}
+
+static void action_save(GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+    if (!file_opened) {
+        warning(NULL);
+        return;
+    }
+
+    if (current_file[0] == '\0') {
+        action_save_as(action, parameter, data);
+        return;
+    }
+
+    save_file(&text_list, current_file);
+
+    g_print("File berhasil disimpan: %s\n", current_file);
 }
 
 static void action_close(GSimpleAction *action, GVariant *parameter, gpointer data)

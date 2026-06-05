@@ -50,6 +50,11 @@ void save_as_file (List *L, char *path){
     fclose(file);
 }
 
+void save_file(List *L, char *path)
+{
+    save_as_file(L, path);
+}
+
 void close_file (List *L){
     create_file(L);
 }
