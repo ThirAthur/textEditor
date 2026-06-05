@@ -558,6 +558,56 @@ static void on_paste_clipboard(GtkTextView *text_view, gpointer data)
     g_signal_stop_emission_by_name(text_view, "paste-clipboard");
 }
 
+static gboolean on_capture_keys(GtkEventControllerKey *controller,
+                                guint keyval,
+                                guint keycode,
+                                GdkModifierType state,
+                                gpointer data)
+{
+    // Jika tidak ada file yang terbuka, biarkan event lolos 
+    // agar fungsi key_pressed bawaanmu bisa menampilkan peringatan.
+    if (!file_opened) return FALSE;
+
+    // 1. Menangani Shortcut dengan Control (Ctrl+Z / Ctrl+Y)
+    if (state & GDK_CONTROL_MASK) {
+        if (keyval == GDK_KEY_z || keyval == GDK_KEY_Z) {
+            action_undo(NULL, NULL, NULL); 
+            return TRUE; // Blokir GTK
+        }
+        if (keyval == GDK_KEY_y || keyval == GDK_KEY_Y) {
+            action_redo(NULL, NULL, NULL); 
+            return TRUE; // Blokir GTK
+        }
+    }
+
+    // 2. Menangani Tombol Navigasi (Home / End)
+    if (keyval == GDK_KEY_Home || keyval == GDK_KEY_KP_Home) {
+        edit_end_session();
+        col_pos = 0; // Ke awal baris
+        gui_update();
+        return TRUE; 
+    }
+
+    if (keyval == GDK_KEY_End || keyval == GDK_KEY_KP_End) {
+        edit_end_session();
+        if (poscursor != NULL) {
+            col_pos = strlen(poscursor->info); // Ke akhir teks di baris ini
+        }
+        gui_update();
+        return TRUE; 
+    }
+
+    if (keyval == GDK_KEY_Page_Up || keyval == GDK_KEY_Page_Down) {
+        return TRUE; // Blokir Page Up/Down bawaan GTK
+    }
+
+    if (keyval == GDK_KEY_Delete || keyval == GDK_KEY_KP_Delete) {
+        return TRUE;
+    }
+
+    return FALSE; 
+}
+
 GMenu *createFileMenu()
 {
     GMenu *file_menu = g_menu_new();
@@ -638,6 +688,14 @@ void activate(GtkApplication *app, gpointer user_data)
 
     g_signal_connect(text_view, "copy-clipboard", G_CALLBACK(on_copy_clipboard), NULL);
     g_signal_connect(text_view, "paste-clipboard", G_CALLBACK(on_paste_clipboard), NULL);
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    gtk_text_buffer_set_enable_undo(buffer, FALSE);
+
+    GtkEventController *capture_ctrl = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(capture_ctrl), GTK_PHASE_CAPTURE);
+    g_signal_connect(capture_ctrl, "key-pressed", G_CALLBACK(on_capture_keys), NULL);
+    gtk_widget_add_controller(text_view, capture_ctrl);
 
     gui_update();
     gtk_window_present(GTK_WINDOW(window));
