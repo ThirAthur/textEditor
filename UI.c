@@ -438,6 +438,8 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
                 return FALSE;
             } else if (file_opened == 0) {
                 warning(parent_window);
+            } else {
+                return FALSE;
             }
             return TRUE;
         }
