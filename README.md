@@ -134,18 +134,16 @@ pada file `task.json` ketikan
 **Setting environment komputer dan visual studio code telah berhasil dan cobalah untuk menajalankan program yang tersedia**
 
 ### Compile and Run 
-1. Buka file yang ingin dicompile
-2. Compile dengan menekan tombol :arrow_forward: yang ada pad pojok kiri atas
-3. pilih compiler yang digunakan untuk menjalankan program
-
-### Compile, Build, and Run
-1. Buka file yang ingin dicompile
-2. cari tombol `Terminal` pada menu bagian atas
-3. pilih opsi `Run task...`
-4. Pilih Compiler
-5. Buka folder disimpannya proyek
-6. cari file dengan nama yang sama seperti file yang dibuild dengan extention(.exe)
-7. Klik file tersebut untuk menjalankan program
+1. Pastikan compiler sudah terdownload pada direktori msys64. Default: ```"C:/users/[NamaUserAnda]/msys64/mingw64/include"```
+2. Buka MSYS2 MINGW64
+3. Pakai perintah ```cd C:/users/[NamaUserAnda]/[direktori git yang sudah di download]```  
+***note** : jika direktori lebih dari 1 kata atau ada spasi wajib menggunakan tanda petik.  
+Contoh: ```C:/users/Deva/"Kuliah Polban/texteditor"```
+4. Jika sudah pada direktori git masukkan perintah berikut untuk compile semua file yang ada
+```  
+gcc UI.c LList.c array.c main.c cursor.c edit.c file.c shortcut.c -o main.exe `pkg-config --cflags --libs gtk4`
+```
+5. Gunakan perintah ``` ./main.exe ``` untuk menjalankan apliakasi atau bisa dengan masuk ke dalam direktori yang sudah di download dan jalankan file main.exe
 
 ## Identitas
 ### Anggota
