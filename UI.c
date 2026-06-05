@@ -68,6 +68,7 @@ static void warning(GtkWindow *parent)
 {
     GtkAlertDialog *dialog = gtk_alert_dialog_new("Tidak ada File aktif");
     
+    
     gtk_alert_dialog_set_detail(dialog, "Gunakan Fitur New untuk mulai menulis");
     gtk_alert_dialog_show(dialog, parent); 
 }
@@ -188,8 +189,8 @@ static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer 
 
 static void action_close(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-
     create_file(&text_list); 
+    current_file[0] = 0;
     char empty_line[clmn] = "";
     InsChFirst(&text_list, empty_line);
     poscursor = First(text_list);
@@ -363,24 +364,53 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
                             guint keyval,
                             gpointer data)
 {
-    int alert = 0;
     GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(controller));
+    GtkWindow *parent_window = GTK_WINDOW(gtk_widget_get_root(text_view));
     
-    if((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)){
-        action_copy(NULL, NULL, NULL);
+
+
+    if ((state & GDK_CONTROL_MASK)) {
+        if ((keyval == GDK_KEY_BackSpace)){
+            return FALSE;
+        }
+        
+        if ((keyval == GDK_KEY_n) || (keyval == GDK_KEY_N)){
+            return FALSE;
+        } 
+        if ((keyval == GDK_KEY_o) || (keyval == GDK_KEY_O)){
+            return FALSE;
+        }
+        if ((keyval == GDK_KEY_s) || (keyval == GDK_KEY_S)){
+            if ((state && GDK_SHIFT_MASK) && file_opened == 0){
+                warning(parent_window);
+            } else if ((state & GDK_SHIFT_MASK) && file_opened == 1) {
+                return FALSE;
+            } else if (file_opened == 0) {
+                warning(parent_window);
+            }
+            return TRUE;
+        }
+        if ((keyval == GDK_KEY_w) || (keyval == GDK_KEY_w)){
+            return FALSE;
+        }
+
+        if ((keyval == GDK_KEY_y) || ((keyval == GDK_KEY_Y)) ||
+            (keyval == GDK_KEY_z) || (keyval == GDK_KEY_Z) || 
+            (keyval == GDK_KEY_c) || (keyval == GDK_KEY_C) ||
+            (keyval == GDK_KEY_v) || (keyval == GDK_KEY_V) ||
+            (keyval == GDK_KEY_f) || (keyval == GDK_KEY_F) ){
+                if(!file_opened){
+                    warning(parent_window);
+                    return TRUE;
+                }
+                return FALSE;
+            }
+
         return TRUE;
     }
 
-    if((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_v || keyval == GDK_KEY_V)){
-        action_paste(NULL, NULL, NULL);
-        return TRUE;
-    }
-   
     if (!file_opened) {
-        if(!alert){
-            warning(NULL);
-            alert = 1;
-        }
+        warning(parent_window);
         return TRUE;
     }
 
@@ -412,9 +442,9 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         return FALSE; // Biarkan GTK menghandle shortcut lain
     }
 
-    
-    return FALSE;
     gui_update();
+    return TRUE;
+   
     
 }
 
@@ -550,7 +580,7 @@ void activate(GtkApplication *app, gpointer user_data)
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(save_as_action));
 
     GSimpleAction *find_action = g_simple_action_new("find", NULL);
-    g_signal_connect(find_action, "activate", G_CALLBACK(action_find), NULL);
+    g_signal_connect(find_action, "activate", G_CALLBACK(callsearch_callfind), NULL);
     g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(find_action));
 
     GSimpleAction *close_action = g_simple_action_new("close", NULL);
