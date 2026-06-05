@@ -63,7 +63,7 @@ static void gui_update()
     gtk_text_buffer_place_cursor(buffer, &iter);
 
     GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);
-    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(text_view), mark, 0.0, FALSE, 0.0, 0.0);
+    gtk_text_view_scroll_mark_onscreen(GTK_TEXT_VIEW(text_view), mark);
 }
 
 static void warning(GtkWindow *parent)
