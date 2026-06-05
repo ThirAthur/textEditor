@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Fathir.h"
+#include "file.h"
 #include "shortcut.h"
 #include "cursor.h"
 
@@ -9,7 +10,6 @@
 List text_list;
 address poscursor;
 int col_pos = 0;
-
 char current_file[256] = "";
 int file_opened = 0;
 
@@ -67,26 +67,70 @@ static void gui_update()
 static void warning(GtkWindow *parent)
 {
     GtkAlertDialog *dialog = gtk_alert_dialog_new("Tidak ada File aktif");
+    
     gtk_alert_dialog_set_detail(dialog, "Gunakan Fitur New untuk mulai menulis");
     gtk_alert_dialog_show(dialog, parent); 
 }
 
 static void action_new(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    init_editor(); // Reset List
+    create_file(&text_list);            // Reset List
+    char empty_line[clmn] = "";
+    InsChFirst(&text_list, empty_line);
+    poscursor = First(text_list);
+    col_pos = 0;
     
-    current_file[0] = '\0';
     file_opened = 1;
 
     gui_update();
     gtk_widget_grab_focus(text_view);
 }
 
+static void open_response (GObject *source_object, GAsyncResult *res, gpointer data){
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
+    GError *error = NULL;
+    GFile *file = gtk_file_dialog_open_finish(dialog, res, &error);
+
+    if (file != NULL){
+        char *path = g_file_get_path(file);
+        if (path != NULL){
+            strcpy(current_file, path);
+            file_opened = 1;
+
+            open_file(&text_list, path);
+
+            poscursor = First(text_list);
+            col_pos = 0;
+
+            gui_update();
+            g_free(path);
+        }
+        g_object_unref(file);
+    }
+
+}
+
 static void action_open(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    // TODO: Sesuaikan dengan file.c versi Linked List
-    g_print("Fitur Open belum dihubungkan dengan Linked List.\n");
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "Txt Files");
+    gtk_file_filter_add_pattern(filter, "*.txt");
+
+    GListStore *filters = g_list_store_new(GTK_TYPE_FILE_FILTER);
+    g_list_store_append(filters, filter);
+
+    gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filters));
+    gtk_file_dialog_set_default_filter(dialog, filter);
+
+    g_object_unref(filters);
+    g_object_unref(filter);
+
+   
+    gtk_file_dialog_open(dialog, NULL, NULL, open_response, NULL);
 }
+
 
 static void action_save(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
@@ -98,21 +142,64 @@ static void action_save(GSimpleAction *action, GVariant *parameter, gpointer dat
     g_print("Fitur Save belum dihubungkan dengan Linked List.\n");
 }
 
+static void save_as_response (GObject *source_object, GAsyncResult *res, gpointer data)
+{
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
+    GError *error = NULL;
+    GFile *file = gtk_file_dialog_save_finish(dialog, res, &error);
+
+    if (file != NULL){
+        char *path = g_file_get_path(file);
+        if (path != NULL){
+            strcpy(current_file, path);
+            file_opened = 1;
+
+            save_as_file(&text_list, path);
+
+            g_free(path);
+        }
+        g_object_unref(file);
+    }
+}
+
 static void action_save_as(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
     // TODO: Sesuaikan dengan file.c versi Linked List
-    g_print("Fitur Save As belum dihubungkan dengan Linked List.\n");
+
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "Txt Files");
+    gtk_file_filter_add_pattern(filter, "*.txt");
+
+    GListStore *filters = g_list_store_new(GTK_TYPE_FILE_FILTER);
+    g_list_store_append(filters, filter);
+
+    gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filters));
+    gtk_file_dialog_set_default_filter(dialog, filter);
+
+    g_object_unref(filters);
+    g_object_unref(filter);
+
+   
+    gtk_file_dialog_save(dialog, NULL, NULL, save_as_response, NULL);
+
 }
 
 static void action_close(GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-    init_editor(); // Reset List
 
-    current_file[0] = '\0';
+    create_file(&text_list); 
+    char empty_line[clmn] = "";
+    InsChFirst(&text_list, empty_line);
+    poscursor = First(text_list);
+    col_pos = 0;
+
     file_opened = 0;
 
     gui_update();
     gtk_widget_grab_focus(text_view);
+    
 }
 
 static void action_copy(GSimpleAction *action, GVariant *parameter, gpointer data)
@@ -325,8 +412,10 @@ static gboolean key_pressed(GtkEventControllerKey *controller,
         return FALSE; // Biarkan GTK menghandle shortcut lain
     }
 
+    
+    return FALSE;
     gui_update();
-    return TRUE;
+    
 }
 
 static void mouse_clicked(GtkGestureClick *gesture, int n_press, double x, double y, gpointer data)
